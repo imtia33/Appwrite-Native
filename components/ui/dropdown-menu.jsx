@@ -52,7 +52,7 @@ function DropdownMenuSubTrigger({
         )}
         {...props}>
         <>{children}</>
-        <Icon as={icon} className={cn('text-foreground ml-auto size-4 shrink-0', iconClassName)} />
+        <Icon as={icon} size={16} color='grey' />
       </DropdownMenuPrimitive.SubTrigger>
     </TextClassContext.Provider>
   );
@@ -93,22 +93,21 @@ function DropdownMenuContent({
         <DropdownMenuPrimitive.Overlay
           style={Platform.select({
             web: overlayStyle ?? undefined,
-            native: overlayStyle
-              ? StyleSheet.flatten([
-                  StyleSheet.absoluteFill,
-                  overlayStyle,
-                ])
-              : StyleSheet.absoluteFill,
+            native: [
+              StyleSheet.absoluteFill,
+              { zIndex: 1000, elevation: 1000 },
+              overlayStyle,
+            ],
           })}
           className={overlayClassName}>
-          <NativeOnlyAnimatedView entering={FadeIn}>
+          <NativeOnlyAnimatedView className="z-[1000]" entering={FadeIn}>
             <TextClassContext.Provider value="text-popover-foreground">
               <DropdownMenuPrimitive.Content
                 className={cn(
                   'bg-popover border-border min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg shadow-black/5',
                   Platform.select({
                     web: cn(
-                      'animate-in fade-in-0 zoom-in-95 max-h-(--radix-context-menu-content-available-height) origin-(--radix-context-menu-content-transform-origin) z-50 cursor-default',
+                      'animate-in fade-in-0 zoom-in-95 max-h-(--radix-context-menu-content-available-height) origin-(--radix-context-menu-content-transform-origin) z-[1000] cursor-default',
                       props.side === 'bottom' && 'slide-in-from-top-2',
                       props.side === 'top' && 'slide-in-from-bottom-2'
                     ),
@@ -178,10 +177,7 @@ function DropdownMenuCheckboxItem({
           <DropdownMenuPrimitive.ItemIndicator>
             <Icon
               as={Check}
-              className={cn(
-                'text-foreground size-4',
-                Platform.select({ web: 'pointer-events-none' })
-              )}
+              size={16} color='grey'
             />
           </DropdownMenuPrimitive.ItemIndicator>
         </View>

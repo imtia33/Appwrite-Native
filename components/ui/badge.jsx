@@ -2,7 +2,7 @@ import { TextClassContext } from './text';
 import { cn } from '../../lib/utils';
 import * as Slot from '@rn-primitives/slot';
 import { cva } from 'class-variance-authority';
-import { Platform, View } from 'react-native';
+import { Platform, View, Text } from 'react-native';
 
 const badgeVariants = cva(
   cn(
@@ -26,6 +26,14 @@ const badgeVariants = cva(
           'bg-destructive border-transparent',
           Platform.select({ web: '[a&]:hover:bg-destructive/90' })
         ),
+        success: cn(
+          'bg-[#1a4238] border-transparent',
+          Platform.select({ web: '[a&]:hover:bg-green-600' })
+        ),
+        warning: cn(
+          'bg-yellow-500 border-transparent',
+          Platform.select({ web: '[a&]:hover:bg-yellow-600' })
+        ),
         outline: Platform.select({ web: '[a&]:hover:bg-accent [a&]:hover:text-accent-foreground' }),
       },
     },
@@ -35,12 +43,15 @@ const badgeVariants = cva(
   }
 );
 
+
 const badgeTextVariants = cva('text-xs font-medium', {
   variants: {
     variant: {
       default: 'text-primary-foreground',
       secondary: 'text-secondary-foreground',
       destructive: 'text-white',
+      success: 'text-white',
+      warning: 'text-white',
       outline: 'text-foreground',
     },
   },
@@ -49,11 +60,18 @@ const badgeTextVariants = cva('text-xs font-medium', {
   },
 });
 
+
 function Badge({ className, variant, asChild, ...props }) {
   const Component = asChild ? Slot.View : View;
+  const children = typeof props.children === 'string' || typeof props.children === 'number'
+    ? <Text>{props.children}</Text>
+    : props.children;
+
   return (
     <TextClassContext.Provider value={badgeTextVariants({ variant })}>
-      <Component className={cn(badgeVariants({ variant }), className)} {...props} />
+      <Component className={cn(badgeVariants({ variant }), className)} {...props}>
+        {children}
+      </Component>
     </TextClassContext.Provider>
   );
 }

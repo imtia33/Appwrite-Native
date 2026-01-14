@@ -1,11 +1,13 @@
 {
   "expo": {
-    "name": "Axis-Expo-App",
-    "slug": "Axis-Expo-App",
-    "scheme": ["axis-expo-app"],
+    "name": "Appwrite",
+    "slug": "appwrite",
+    "scheme": [
+      "appwrite"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/favicon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -18,17 +20,25 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.axistro.appwrite"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/icon.png",
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      "expo-asset"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "66e3b427-067a-4564-bb40-ce143f264f20"
+      }
+    }
   }
 }

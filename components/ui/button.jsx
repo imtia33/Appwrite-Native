@@ -1,7 +1,7 @@
 import { TextClassContext } from './text';
 import { cn } from '../../lib/utils';
 import { cva } from 'class-variance-authority';
-import { Platform, Pressable } from 'react-native';
+import { Platform, Pressable, Text } from 'react-native';
 
 const buttonVariants = cva(
   cn(
@@ -89,13 +89,19 @@ const buttonTextVariants = cva(
 );
 
 function Button({ className, variant, size, ...props }) {
+  const children = typeof props.children === 'string' || typeof props.children === 'number'
+    ? <Text>{props.children}</Text>
+    : props.children;
+
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
         className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
         role="button"
         {...props}
-      />
+      >
+        {children}
+      </Pressable>
     </TextClassContext.Provider>
   );
 }

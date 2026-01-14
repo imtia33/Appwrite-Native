@@ -3,4 +3,6 @@ const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 
+config.resolver.assetExts.push('pdf');
+
 module.exports = withNativeWind(config, { input: './global.css', inlineRem: 16 });

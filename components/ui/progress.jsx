@@ -12,7 +12,7 @@ import Animated, {
 function Progress({ className, value, indicatorClassName, ...props }) {
   return (
     <ProgressPrimitive.Root
-      className={cn('bg-primary/20 relative h-2 w-full overflow-hidden rounded-full', className)}
+      className={cn('bg-input relative h-2 w-full overflow-hidden rounded-full', className)}
       {...props}>
       <Indicator value={value} className={indicatorClassName} />
     </ProgressPrimitive.Root>
@@ -59,7 +59,7 @@ function NativeIndicator({ value, className }) {
 
   return (
     <ProgressPrimitive.Indicator asChild>
-      <Animated.View style={indicator} className={cn('bg-foreground h-full', className)} />
+      <Animated.View style={indicator} className={cn('bg-primary h-full', className)} />
     </ProgressPrimitive.Indicator>
   );
 }

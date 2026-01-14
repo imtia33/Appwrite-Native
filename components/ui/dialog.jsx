@@ -74,7 +74,8 @@ function DialogContent({
             hitSlop={12}>
             <Icon
               as={X}
-              className={cn('text-accent-foreground web:pointer-events-none size-4 shrink-0')}
+              size={26}
+              color='gray'
             />
             <Text className="sr-only">Close</Text>
           </DialogPrimitive.Close>

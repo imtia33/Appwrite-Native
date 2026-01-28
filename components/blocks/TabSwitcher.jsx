@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 
 const TabSwitcher = ({ tabs, activeRoute, onTabPress }) => {
     return (
-        <View style={{ height: 50 }} className="py-1 px-1 max-w-[95%] self-center bg-secondary border border-0 border-border rounded-lg">
+        <View style={{ height: 45 }} className=" px-1 py-1 max-w-[95%] self-center bg-secondary border border-0 border-border rounded-lg">
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}

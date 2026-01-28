@@ -84,8 +84,9 @@ function AccordionTrigger({ className, children, ...props }) {
               <Icon
                 as={ChevronDown}
                 size={16}
+                color={isExpanded ? 'gray' : 'gray'}
                 className={cn(
-                  'text-muted-foreground shrink-0',
+                  ' shrink-0',
                   Platform.select({
                     web: 'pointer-events-none translate-y-0.5 transition-transform duration-200',
                   })

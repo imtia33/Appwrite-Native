@@ -14,7 +14,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: cn(
-          'bg-primary active:bg-primary/90 shadow-sm shadow-black/5',
+          'bg-primary active:bg-primary/90 shadow-sm shadow-black/5 ',
           Platform.select({ web: 'hover:bg-primary/90' })
         ),
         destructive: cn(
@@ -96,7 +96,7 @@ function Button({ className, variant, size, ...props }) {
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
-        className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
+        className={cn(props.disabled && 'opacity-50 ', buttonVariants({ variant, size }), className)}
         role="button"
         {...props}
       >

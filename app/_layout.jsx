@@ -3,6 +3,14 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { PortalHost } from '@rn-primitives/portal';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ReanimatedLogLevel, configureReanimatedLogger } from 'react-native-reanimated';
+
+// This is the default configuration
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false, // Disable the strict mode warning about reading shared values during render
+});
 
 import "../global.css"
 import { ThemeProvider } from '../lib/theme-context';
@@ -28,30 +36,44 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   return (
-    <ThemeProvider>
-      <GlobalProvider>
-        <Stack>
-          <Stack.Screen
-            name="index"
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="(auth)"
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="Organization"
-            options={{
-              headerShown: false,
-            }}
-          />
-        </Stack>
-        <PortalHost />
-      </GlobalProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <GlobalProvider>
+          <Stack>
+            <Stack.Screen
+              name="index"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="(auth)"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="Organization"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="profile"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="Project"
+              options={{
+                headerShown: false,
+              }}
+            />
+          </Stack>
+          <PortalHost />
+        </GlobalProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

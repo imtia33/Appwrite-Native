@@ -3,7 +3,6 @@ const { hairlineWidth } = require('nativewind/theme');
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
-  // NOTE: Update this to include the paths to all files that contain Nativewind classes.
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
@@ -27,6 +26,7 @@ module.exports = {
         input: 'var(--input)',
         ring: 'var(--ring)',
         background: 'var(--background)',
+        background2: 'var(--background-2)',
         foreground: 'var(--foreground)',
         primary: {
           DEFAULT: 'var(--primary)',

@@ -108,6 +108,45 @@ const TableCaption = React.forwardRef(({ className, ...props }, ref) => (
 ));
 TableCaption.displayName = 'TableCaption';
 
+const TableColumn = React.forwardRef(({ className, ...props }, ref) => (
+    <View
+        ref={ref}
+        className={cn('flex-column', className)}
+        {...props}
+    />
+));
+TableColumn.displayName = 'TableColumn';
+
+const TableColumnHeader = React.forwardRef(({ className, children, ...props }, ref) => (
+    <View
+        ref={ref}
+        className={cn('h-10 px-4 justify-center bg-muted/30 border-b border-border', className)}
+        {...props}
+    >
+        {typeof children === 'string' || typeof children === 'number' ? (
+            <RNText className="text-xs font-semibold text-muted-foreground uppercase">{children}</RNText>
+        ) : (
+            children
+        )}
+    </View>
+));
+TableColumnHeader.displayName = 'TableColumnHeader';
+
+const TableColumnCell = React.forwardRef(({ className, children, ...props }, ref) => (
+    <View
+        ref={ref}
+        className={cn('px-4 border-b border-border justify-center', className)}
+        {...props}
+    >
+        {typeof children === 'string' || typeof children === 'number' ? (
+            <RNText className="text-sm text-foreground">{children}</RNText>
+        ) : (
+            children
+        )}
+    </View>
+));
+TableColumnCell.displayName = 'TableColumnCell';
+
 export {
     Table,
     TableHeader,
@@ -117,4 +156,8 @@ export {
     TableRow,
     TableCell,
     TableCaption,
+    TableColumn,
+    TableColumnHeader,
+    TableColumnCell,
 };
+

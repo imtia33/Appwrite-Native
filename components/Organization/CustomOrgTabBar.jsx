@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { View, Text, Pressable, ScrollView, Image } from 'react-native'
 import { Plus, Github } from 'lucide-react-native'
 import { OrganizationPicker } from './OrgPicker';
@@ -28,7 +28,22 @@ const CustomOrgTabBar = ({
   const iconColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
   
   // Get the active route from Material Top Tabs state
-  const activeRoute = state ? state.routes[state.index].name : 'projects';
+  const activeRoute = useMemo(() => {
+    if (!state) return 'projects';
+    
+    try {
+      // Access properties individually to avoid triggering Reanimated during render
+      const routes = state.routes;
+      const index = state.index;
+      
+      if (routes && typeof index !== 'undefined' && routes[index] && routes[index].name) {
+        return routes[index].name;
+      }
+    } catch (error) {
+      console.warn('Error getting active route:', error);
+    }
+    return 'projects';
+  }, [state]);
   const getPlanInfo = (plan) => {
     switch (plan) {
       case BillingPlan.FREE:

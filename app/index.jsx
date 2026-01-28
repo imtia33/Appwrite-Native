@@ -9,7 +9,7 @@ const index = () => {
   useEffect(() => {
     if (!loading) {
       if (isLogged) {
-        router.replace('/Organization/projects')
+        router.replace('/Project')
       } else {
         router.replace('/login')
       }

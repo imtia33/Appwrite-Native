@@ -134,7 +134,6 @@ export const useOrganizationStore = create<OrganizationState>((set) => ({
             const response = await sdk.forConsole.billing.listOrganization([
                 Query.equal('platform', Platform.Appwrite)
             ]);
-            console.log('Fetched Organizations:', response);
 
             const organizations = response.teams as Organization[];
             let currentOrg = null;

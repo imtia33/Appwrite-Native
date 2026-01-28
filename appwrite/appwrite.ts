@@ -24,6 +24,7 @@ import {
     Sites,
     Tokens,
     TablesDB,
+    Databases,
     Domains,
     Realtime,
     Organizations
@@ -137,6 +138,7 @@ const sdkForProject = {
     migrations: new Migrations(clientProject),
     sites: new Sites(clientProject),
     tablesDB: new TablesDB(clientProject),
+    databases: new Databases(clientProject),
     console: new Console(clientProject) // for suggestions API
 };
 

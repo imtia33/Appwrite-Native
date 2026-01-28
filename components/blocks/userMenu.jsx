@@ -15,8 +15,7 @@ import { useGlobalContext } from '@/context/appwriteContext';
 import { logout } from '@/appwrite/auth/auth';
 import { router } from 'expo-router';
 import { useTheme } from '@/lib/theme-context';
-import ToggleSwitch from '../Animated/ThemeToggle';
-import { MoonIcon, SunIcon } from 'lucide-react-native';
+import ThemeToggle from '../Animated/ThemeToggle';
 
 export function UserMenu() {
     const { user, avatarUrl, setIsLogged, setUser, setAvatarUrl } = useGlobalContext();
@@ -69,7 +68,7 @@ export function UserMenu() {
                             variant="outline"
                             size="sm"
                             onPress={() => {
-                                // TODO: Navigate to account settings screen
+                                router.replace('/profile')
                             }}>
                             <Icon as={SettingsIcon} size={18} color={theme === 'dark' ? '#9CA3AF' : '#6B7280'} />
                             <Text>Manage Account</Text>
@@ -80,18 +79,9 @@ export function UserMenu() {
                         </Button>
                     </View>
                 </View>
-                <View style={{ height: 60 }} className=' p-2 flex-row items-center  gap-8 px-4'>
-                    <Text className="text-muted-foreground text-lg font-normal leading-4">Theme</Text>
-                    <ToggleSwitch
-                        trackHeight={25}
-                        trackWidth={50}
-                        thumbSize={20}
-                        thumbColor={theme === 'dark' ? '#9CA3AF' : '#6B7280'}
-                        trackColor={theme === 'dark' ? '#9CA3AF' : '#6B7280'}
-                        activeIcon={MoonIcon}
-                        inactiveIcon={SunIcon}
-
-                    />
+                <View style={{ height: 64 }} className='flex-row items-center justify-between px-4 mt-2'>
+                    <Text className="text-muted-foreground text-sm font-medium uppercase tracking-wider">Appearance</Text>
+                    <ThemeToggle size="md" />
                 </View>
             </PopoverContent>
         </Popover>

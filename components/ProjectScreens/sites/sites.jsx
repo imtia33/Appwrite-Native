@@ -5,12 +5,12 @@ import useSitesStore from '../../../appwrite/data-services/sitesService';
 import { useTheme } from '../../../lib/theme-context';
 import { Card, CardContent } from '../../ui/card';
 import { Icon } from '../../ui/icon';
-import { Globe, Plus, Trash2, ExternalLink, Clock, AlertCircle, MoreHorizontal } from 'lucide-react-native';
+import { Globe, Plus, Trash2, ExternalLink, Clock, AlertCircle, MoreHorizontal, Code } from 'lucide-react-native';
+import { darkIcons, lightIcons } from '../../../constants/icons';
 import { Skeleton } from '../../ui/skeleton';
-import { Badge } from '../../ui/badge';
 import { Text } from '../../ui/text';
 import { Button } from '../../ui/button';
-import { getApiEndpoint, sdk } from '../../../appwrite/appwrite';
+import {  sdk } from '../../../appwrite/appwrite';
 
 const formatDate = (dateString) => {
   if (!dateString) return '-';
@@ -28,6 +28,87 @@ const timeFromNow = (dateString) => {
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
   return `${Math.floor(diffInSeconds / 86400)}d ago`;
+};
+
+const arrayBufferToBase64 = (buffer) => {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
+
+const SiteScreenshot = ({ site }) => {
+  const { isDark } = useTheme();
+  const { currentProject } = useProjectStore();
+  const [imageUri, setImageUri] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fileId = isDark ? site?.deploymentScreenshotDark : site?.deploymentScreenshotLight;
+    
+    if (!fileId) {
+        setImageUri(null);
+        return;
+    }
+
+    let isMounted = true;
+
+    const fetchScreenshot = async () => {
+      setLoading(true);
+      try {
+         const region = currentProject?.region === 'default' ? 'fra' : (currentProject?.region || 'fra');
+         const consoleSdk = sdk.forConsoleIn(region);
+         
+         const url = consoleSdk.storage.getFileView({
+            bucketId: 'screenshots',
+            fileId,
+          });
+
+         const response = await consoleSdk.client.call('GET', new URL(url), {}, {}, 'arrayBuffer');
+         
+         if (isMounted && response) {
+            const base64 = arrayBufferToBase64(response);
+            setImageUri(`data:image/png;base64,${base64}`);
+         }
+
+      } catch (err) {
+        console.error("Error fetching site screenshot:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchScreenshot();
+    
+    return () => { isMounted = false; };
+  }, [site, isDark, currentProject]);
+
+  if (loading) {
+      return (
+         <View className="h-[175px] items-center justify-center">
+            <ActivityIndicator />
+         </View>
+      );
+  }
+
+  if (imageUri) {
+      return (
+        <Image 
+          source={{ uri: imageUri }} 
+          style={{  height: 175, borderRadius: 10 }}
+          resizeMode="contain"
+        />
+      );
+  }
+
+  return (
+      <View className="w-full h-full items-center justify-center">
+        <Icon as={Globe} size={48} className="text-muted-foreground/30" />
+      </View>
+  );
 };
 
 const sites = () => {
@@ -55,29 +136,7 @@ const sites = () => {
     }
   };
 
-  const getScreenshotUrl = (site) => {
-    const fileId = isDark ? site?.deploymentScreenshotDark : site?.deploymentScreenshotLight;
-    if (!fileId) return null;
-    
-    try {
-      const region = currentProject?.region === 'default' ? 'fra' : (currentProject?.region || 'fra');
-      const consoleSdk = sdk.forConsoleIn(region);
-      
-      // Use getFilePreview with webp for better mobile compatibility and performance
-      let url = consoleSdk.storage.getFilePreview({
-        bucketId: 'screenshots',
-        fileId,
-        width: 1024,
-        height: 576,
-        output: 'png'
-      });
-      
-      return url;
-    } catch (e) {
-      console.error('Error generating screenshot URL:', e);
-      return null;
-    }
-  };
+
 
   const handleDelete = (site) => {
     Alert.alert(
@@ -110,14 +169,7 @@ const sites = () => {
     }
   };
 
-  const getStatusVariant = (status) => {
-    switch (status) {
-      case 'ready': return 'success';
-      case 'failed': return 'destructive';
-      case 'building': return 'warning';
-      default: return 'secondary';
-    }
-  };
+
 
   if (!currentProject) {
     return (
@@ -133,15 +185,16 @@ const sites = () => {
       <View className="p-4 border-b border-border">
         <View className="flex-row justify-between items-center">
           <View>
-            <Text variant="h3" className="text-foreground">Sites</Text>
             <Text variant="muted" className="text-muted-foreground">Deploy and manage your web applications</Text>
           </View>
-          <Button size="sm" variant="outline" className="flex-row items-center gap-2">
-            <Icon as={Plus} size={16} />
-            <Text>Create</Text>
-          </Button>
+          
         </View>
+        <Button size="sm" variant="outline" className="flex-row items-center gap-2 bg-primary w-32 mt-2">
+            <Icon as={Plus} size={16} color='white' />
+            <Text className='text-white'>Create</Text>
+          </Button>
       </View>
+      
 
       {loading && allSites.length === 0 ? (
         <View className="p-4 gap-4">
@@ -190,33 +243,39 @@ const sites = () => {
           contentContainerStyle={{ padding: 16 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary || '#007AFF']} />}
           renderItem={ ({ item: site }) => {
-            const screenshotUrl =  getScreenshotUrl(site)
+           
             return (
-              <Card className="mb-6 overflow-hidden bg-card border-border shadow-lg">
-                <View className="p-2 bg-muted/20 relative">
-                  {screenshotUrl ? (
-                    <Image 
-                      source={{ uri: screenshotUrl }} 
-                      style={{  height: 175,borderRadius:10 }}
-                      resizeMode="contain"
-                    />
-                  ) : (
-                    <View className="w-full h-full items-center justify-center">
-                      <Icon as={Globe} size={48} className="text-muted-foreground/30" />
+              <Card className="mb-3 overflow-hidden bg-card border-border shadow-lg">
+                <View className="px-2 bg-muted/20 ">
+                  <SiteScreenshot site={site} />
+                    <View style={{borderWidth:1,borderStyle:'dashed',borderColor:'gray'}} className="absolute bottom-3 left-3 rounded-xl ">
+                      {(() => {
+                        const icons = isDark ? darkIcons : lightIcons;
+                        let FrameworkIcon = null;
+                        
+                        const framework = site.framework ? site.framework.toLowerCase() : '';
+                        
+                        if (icons[framework]) {
+                            FrameworkIcon = icons[framework];
+                        } else if (framework === 'react-native') {
+                            FrameworkIcon = icons['react'];
+                        } else if (framework === 'static') {
+                            FrameworkIcon = icons['html5'];
+                        } else {
+                           
+                        }
+
+                        const IconComponent = FrameworkIcon?.default || FrameworkIcon;
+
+                        if (IconComponent) {
+                             return <IconComponent width={22} height={22} />;
+                        }
+                        return <Icon as={Code} size={22} color='gray' />;
+                      })()}
                     </View>
-                  )}
-                  {site.latestDeploymentStatus && (
-                    <View className="absolute top-3 right-3">
-                      <Badge variant={getStatusVariant(site.latestDeploymentStatus)}>
-                        <Text className="text-[10px] font-bold uppercase text-white">
-                          {site.latestDeploymentStatus}
-                        </Text>
-                      </Badge>
-                    </View>
-                  )}
                 </View>
 
-                  <View className="flex-row justify-between items-start mb-1 p-4">
+                  <View className="flex-row justify-between items-start mb-1 px-4">
                     <View className="flex-1">
                       <Text variant="h4" className="text-xl font-bold text-foreground" numberOfLines={1}>
                         {site.name}

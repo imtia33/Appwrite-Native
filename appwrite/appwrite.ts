@@ -27,11 +27,11 @@ import {
     Databases,
     Domains,
     Realtime,
-    Organizations
+    Organizations,
 } from '@appwrite.io/console';
 import { Billing } from './sdk/billings';
-// import { Backups } from '../sdk/backups';
-// import { Sources } from '$lib/sdk/sources';
+import { Backups } from './backups';
+import { Sources } from './sources';
 import {
     REGION_FRA,
     REGION_NYC,
@@ -95,12 +95,13 @@ function createConsoleSdk(client: Client) {
         console: new Console(client),
         assistant: new Assistant(client),
         billing: new Billing(client),
-        // sources: new Sources(client),
+        sources: new Sources(client),
         sites: new Sites(client),
         domains: new Domains(client),
         storage: new Storage(client),
         realtime: new Realtime(client),
-        organizations: new Organizations(client)
+        organizations: new Organizations(client),
+        backups: new Backups(client)
     };
 }
 
@@ -122,7 +123,6 @@ const sdkForProject = {
     client: clientProject,
     account: new Account(clientProject),
     avatars: new Avatars(clientProject),
-    // backups: new Backups(clientProject),
     functions: new Functions(clientProject),
     health: new Health(clientProject),
     locale: new Locale(clientProject),
@@ -139,6 +139,7 @@ const sdkForProject = {
     sites: new Sites(clientProject),
     tablesDB: new TablesDB(clientProject),
     databases: new Databases(clientProject),
+    backups: new Backups(clientProject),
     console: new Console(clientProject) // for suggestions API
 };
 

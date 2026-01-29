@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { useTheme } from '../../lib/theme-context';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Text } from '../ui/text';
-import { sdk } from '../../appwrite/appwrite';
+import { useTheme } from '@/lib/theme-context';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Text } from '@/components/ui/text';
+import { sdk } from '@/appwrite/appwrite';
 
 export const CreateDevKeyModal = ({ isOpen, onOpenChange, projectId, onCreated }) => {
     const { isDark } = useTheme();

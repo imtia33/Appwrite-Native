@@ -5,7 +5,7 @@ import { cn } from '../../lib/utils';
 import * as SelectPrimitive from '@rn-primitives/select';
 import { Check, ChevronDown, ChevronDownIcon, ChevronUpIcon } from 'lucide-react-native';
 import * as React from 'react';
-import { Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View, Text } from 'react-native';
 import { FadeIn, FadeOut } from 'react-native-reanimated';
 import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens';
 import { useTheme } from '../../lib/theme-context';
@@ -17,10 +17,14 @@ const SelectGroup = SelectPrimitive.Group;
 function SelectValue(props) {
   const { value } = SelectPrimitive.useRootContext();
   const { className, ...rest } = props;
-  return /*#__PURE__*/React.createElement(SelectPrimitive.Value, {
-    className: cn('text-foreground line-clamp-1 flex flex-row items-center gap-2 text-sm', !value && 'text-muted-foreground', className),
-    ...rest
-  });
+  return (
+    <SelectPrimitive.Value
+      className={cn('text-foreground line-clamp-1 flex flex-row items-center gap-2 text-sm', !value && 'text-muted-foreground', className)}
+      {...rest}
+    >
+      <Text className={cn('text-sm', className)}>{value ? (value.label || value) : (rest.placeholder || rest.children)}</Text>
+    </SelectPrimitive.Value>
+  );
 }
 
 function SelectTrigger(props) {
@@ -81,29 +85,42 @@ function SelectContent(props) {
 }
 
 function SelectLabel(props) {
-  const { className, ...rest } = props;
-  return /*#__PURE__*/React.createElement(SelectPrimitive.Label, {
-    className: cn('text-white px-2 py-2 text-xs sm:py-1.5', className),
-    ...rest
-  });
+  const { className, children, ...rest } = props;
+  return (
+    <SelectPrimitive.Label
+      className={cn('text-white px-2 py-2 text-xs sm:py-1.5', className)}
+      {...rest}
+    >
+      {typeof children === 'string' ? <Text className={cn('text-xs font-semibold', className)}>{children}</Text> : children}
+    </SelectPrimitive.Label>
+  );
 }
 
 function SelectItem(props) {
-  const { className, children, ...rest } = props;
-  return /*#__PURE__*/React.createElement(SelectPrimitive.Item, {
-    className: cn('active:bg-accent group relative flex w-full flex-row items-center gap-2 rounded-sm py-2 pl-2 pr-8 sm:py-1.5', Platform.select({
-      web: 'focus:bg-accent focus:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 cursor-default outline-none data-[disabled]:pointer-events-none [&_svg]:pointer-events-none'
-    }), rest.disabled && 'opacity-50', className),
-    ...rest
-  }, /*#__PURE__*/React.createElement(View, {
-    className: "absolute right-2 flex size-3.5 items-center justify-center"
-  }, /*#__PURE__*/React.createElement(SelectPrimitive.ItemIndicator, null, /*#__PURE__*/React.createElement(Icon, {
-    as: Check,
-    size: 18,
-    color: 'grey'
-  }))), /*#__PURE__*/React.createElement(SelectPrimitive.ItemText, {
-    className: "text-muted-foreground group-active:text-accent-foreground select-none text-sm"
-  }));
+  const { className, children, label, ...rest } = props;
+  return (
+    <SelectPrimitive.Item
+      className={cn('active:bg-accent group relative flex w-full flex-row items-center gap-2 rounded-sm py-3 pl-3 pr-10', Platform.select({
+        web: 'focus:bg-accent focus:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 cursor-default outline-none data-[disabled]:pointer-events-none [&_svg]:pointer-events-none'
+      }), rest.disabled && 'opacity-50', className)}
+      label={label}
+      {...rest}
+    > 
+      <View className="flex-1">
+        {typeof children === 'string' ? (
+          <Text className="text-foreground text-sm">{children}</Text>
+        ) : (
+          children || <Text className="text-foreground text-sm">{label}</Text>
+        )}
+      </View>
+      <View className="absolute right-3 flex size-4 items-center justify-center">
+        <SelectPrimitive.ItemIndicator>
+          <Icon as={Check} size={18} color="#FD366E" />
+        </SelectPrimitive.ItemIndicator>
+      </View>
+      <SelectPrimitive.ItemText className="hidden" />
+    </SelectPrimitive.Item>
+  );
 }
 
 function SelectSeparator(props) {
@@ -162,7 +179,12 @@ function NativeSelectScrollView(props) {
     return /*#__PURE__*/React.createElement(React.Fragment, null, rest.children);
   }
   return /*#__PURE__*/React.createElement(ScrollView, {
-    className: cn('max-h-52', className),
+    style: { maxHeight: 350 },
+    contentContainerStyle: { paddingVertical: 8 },
+    className: className,
+    keyboardShouldPersistTaps: "handled",
+    showsVerticalScrollIndicator: true,
+    nestedScrollEnabled: true,
     ...rest
   });
 }

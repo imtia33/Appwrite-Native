@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
-import { Text } from '../ui/text';
+import { Text } from '@/components/ui/text';
 import { SvgXml } from 'react-native-svg';
 import { 
     Dialog, 
@@ -8,11 +8,11 @@ import {
     DialogHeader, 
     DialogTitle, 
     DialogFooter 
-} from '../ui/dialog';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Icon } from '../ui/icon';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Icon } from '@/components/ui/icon';
 import { 
     Smartphone, 
     Globe, 
@@ -23,10 +23,10 @@ import {
     Watch,
     Tv
 } from 'lucide-react-native';
-import { cn } from '../../lib/utils';
-import { useProjectStore } from '../../appwrite/store/projectStore';
-import { sdk } from '../../appwrite/appwrite';
-import { useTheme } from '../../lib/theme-context';
+import { cn } from '@/lib/utils';
+import { useProjectStore } from '@/appwrite/store/projectStore';
+import { sdk } from '@/appwrite/appwrite';
+import { useTheme } from '@/lib/theme-context';
 import { FontAwesome5, FontAwesome6, Entypo, AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 
 
@@ -35,7 +35,7 @@ const NEXTJS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" 
 
 const SUB_PLATFORMS = {
     web: [
-        { id: 'svelte', label: 'Svelte', type: 'image', source: require('../../assets/icons/svelte.png'), color: '#FF3E00' },
+        { id: 'svelte', label: 'Svelte', type: 'image', source: require('@/assets/icons/svelte.png'), color: '#FF3E00' },
         { id: 'react', label: 'React', icon: FontAwesome5, name: 'react', color: '#61DAFB' },
         { id: 'nextjs', label: 'Next.js', type: 'svg', xml: NEXTJS_SVG, color: '#000000' },
         { id: 'vue', label: 'Vue', icon: FontAwesome5, name: 'vuejs', color: '#4FC08D' },

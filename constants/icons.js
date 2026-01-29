@@ -199,7 +199,7 @@ export const lightIcons = {
     'sendgrid': require('../assets/icons/light/color/sendgrid.svg'),
     'skype': require('../assets/icons/light/color/skype.svg'),
     'slack': require('../assets/icons/light/color/slack.svg'),
-    'sparkles': require('../assets/icons/light/color/sparkles.svg'),
+    'sparkles': require('../assets/icons/dark/color/sparkles.svg'),
     'spotify': require('../assets/icons/light/color/spotify.svg'),
     'stripe': require('../assets/icons/light/color/stripe.svg'),
     'svelte': require('../assets/icons/light/color/svelte.svg'),
@@ -232,3 +232,40 @@ export const lightIcons = {
     'zoho': require('../assets/icons/light/color/zoho.svg'),
     'zoom': require('../assets/icons/light/color/zoom.svg'),
 };
+
+export function getIconFromRuntime(runtime) {
+    if (!runtime) return undefined;
+    const r = runtime.toLowerCase();
+    switch (true) {
+        case r.includes('node'):
+            return 'node';
+        case r.includes('php'):
+            return 'php';
+        case r.includes('ruby'):
+            return 'ruby';
+        case r.includes('python'):
+            return 'python';
+        case r.includes('dart'):
+            return 'dart';
+        case r.includes('bun'):
+            return 'bun';
+        case r.includes('go'):
+            return 'go';
+        case r.includes('deno'):
+            return 'deno';
+        case r.includes('flutter'):
+            return 'flutter';
+        case r.includes('java'):
+            return 'java';
+        case r.includes('kotlin'):
+            return 'kotlin';
+        case r.includes('swift'):
+            return 'swift';
+        case r.includes('dotnet'):
+            return 'dotnet';
+        case r.includes('cpp'):
+            return 'cpp';
+        default:
+            return undefined;
+    }
+}

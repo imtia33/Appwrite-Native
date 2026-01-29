@@ -152,7 +152,7 @@ const DataTable = ({
                                 {paginatedData.length > 0 ? (
                                     paginatedData.map((item, index) => (
                                         <TableColumnCell
-                                            key={item.$id || item.id || index}
+                                            key={`${item.$id || item.id || 'row'}-${index}`}
                                             style={{ height: ROW_HEIGHT }}
                                             className={cn(index % 2 === 0 ? "bg-background" : "bg-muted/10")}
                                         >

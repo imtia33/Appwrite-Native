@@ -1,22 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { useTheme } from '../../lib/theme-context';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '../ui/dialog';
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion';
-import { Checkbox } from '../ui/checkbox';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Label } from '../ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Icon } from '../ui/icon';
-import { Text } from '../ui/text';
+import { useTheme } from '@/lib/theme-context';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
 import { X, ChevronDown, Check } from 'lucide-react-native';
-import { cn } from '../../lib/utils';
-import { useProjectStore } from '../../appwrite/store/projectStore';
-import { sdk } from '../../appwrite/appwrite';
-import { Separator } from '../ui/separator';
+import { cn } from '@/lib/utils';
+import { useProjectStore } from '@/appwrite/store/projectStore';
+import { sdk } from '@/appwrite/appwrite';
+import { Separator } from '@/components/ui/separator';
 
 const SCOPES_CONFIG = [
     {

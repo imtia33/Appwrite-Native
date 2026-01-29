@@ -1,11 +1,12 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, ToastAndroid, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, ToastAndroid } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useProjectStore } from '../../../appwrite/store/projectStore';
 import useFunctionStore from '../../../appwrite/data-services/functionService';
 import DataTable from '../../blocks/DataTable';
 import { Badge } from '../../ui/badge';
 import { Icon } from '../../ui/icon';
-import { Copy, Plus, Clock, Code, AlertCircle } from 'lucide-react-native';
+import { Copy, Plus, Clock, Code, AlertCircle, Boxes } from 'lucide-react-native';
+import { darkIcons, lightIcons, getIconFromRuntime } from '../../../constants/icons';
 import { useTheme } from '../../../lib/theme-context';
 import * as Clipboard from 'expo-clipboard';
 
@@ -17,36 +18,19 @@ const formatDate = (dateString, type = 'full') => {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Runtime icon mapping
-const getRuntimeIcon = (runtime) => {
-  if (!runtime) return 'code';
-  const base = runtime.split('-')[0].toLowerCase();
-  
-  const iconMap = {
-    'node': 'node',
-    'python': 'python',
-    'php': 'php',
-    'ruby': 'ruby',
-    'dart': 'dart',
-    'deno': 'deno',
-    'dotnet': 'dotnet',
-    'java': 'java',
-    'swift': 'swift',
-    'kotlin': 'kotlin',
-    'bun': 'bun',
-  };
-  return iconMap[base] || 'code';
-};
-
 const Functions = () => {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
+  const icons = isDark ? darkIcons : lightIcons;
   const { currentProject } = useProjectStore();
   
-  const { fetchFunctions, getFunctions, isLoading, getError } = useFunctionStore();
+  const { fetchFunctions, getFunctions, isLoading, getError, createFunction, deleteFunction } = useFunctionStore();
   
   const functions = currentProject?.$id ? getFunctions(currentProject.$id) : [];
   const loading = isLoading();
   const error = getError();
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (currentProject?.$id) {
@@ -59,17 +43,25 @@ const Functions = () => {
     ToastAndroid.show('Copied to clipboard', ToastAndroid.SHORT);
   };
 
+  const handleCreateFunction = async (name, runtime, functionId) => {
+    setIsProcessing(true);
+    try {
+      await createFunction(currentProject.$id, currentProject.region || 'fra', name, runtime, functionId);
+      ToastAndroid.show('Function created successfully', ToastAndroid.SHORT);
+      setCreateModalOpen(false);
+    } catch (err) {
+      ToastAndroid.show(err.message || 'Failed to create function', ToastAndroid.LONG);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleDeleteSelected = async (selectedIds) => {
     try {
-      // Delete functions one by one
       for (const id of selectedIds) {
-        await sdk.forProject(currentProject.region || 'fra', currentProject.$id).functions.delete(id);
+        await deleteFunction(currentProject.$id, currentProject.region || 'fra', id);
       }
       ToastAndroid.show(`${selectedIds.length} function(s) deleted`, ToastAndroid.SHORT);
-      // Refresh the list
-      if (currentProject?.$id) {
-        fetchFunctions(currentProject.$id);
-      }
     } catch (err) {
       console.error('Error deleting functions:', err);
       ToastAndroid.show('Error deleting functions', ToastAndroid.SHORT);
@@ -102,11 +94,18 @@ const Functions = () => {
       accessorKey: 'name',
       width: 280,
       cell: ({ row }) => {
-        const runtimeIcon = getRuntimeIcon(row.original.runtime);
+        const iconName = getIconFromRuntime(row.original.runtime);
+        const iconAsset = iconName ? icons[iconName] : null;
+        const RuntimeIcon = iconAsset?.default || iconAsset;
+
         return (
           <View className="flex-row items-center py-1">
-            <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
-              <Icon as={Code} size={14} color="white"/>
+            <View className="w-9 h-9 rounded-full bg-muted items-center justify-center mr-3 border border-border overflow-hidden">
+              {typeof RuntimeIcon === 'function' ? (
+                <RuntimeIcon width={18} height={18} />
+              ) : (
+                <Icon as={Boxes} size={16} color="gray" />
+              )}
             </View>
             <View className="flex-1">
               <Text className="text-foreground font-medium text-sm" numberOfLines={1}>
@@ -179,7 +178,6 @@ const Functions = () => {
   ];
 
   if (loading) {
-    console.log('Rendering: LOADING STATE');
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator color="#ef4444" size="large" />
@@ -188,7 +186,6 @@ const Functions = () => {
     );
   }
 
-  console.log('Rendering: MAIN CONTENT');
   return (
     <View className="flex-1 bg-background p-4">
       <View className="flex-row justify-between items-center mb-4">
@@ -200,78 +197,58 @@ const Functions = () => {
 
       <View className="flex-row gap-2 mb-4">
         <TouchableOpacity 
-          onPress={() => console.log('Create function')}
+          onPress={() => ToastAndroid.show('Function creation coming soon', ToastAndroid.SHORT)}
           className="bg-primary px-4 py-2 rounded-lg flex-row items-center"
         >
           <Icon as={Plus} size={18} color="white"/>
           <Text className="text-white font-semibold ml-2">Create function</Text>
         </TouchableOpacity>
-
       </View>
 
       {error ? (
-        (() => {
-          console.log('Rendering: ERROR STATE');
-          return (
-            <View className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
-              <Text className="text-destructive font-medium">Error loading functions</Text>
-              <Text className="text-destructive/80 text-sm mt-1">{error}</Text>
-              <TouchableOpacity 
-                onPress={() => currentProject?.$id && fetchFunctions(currentProject.$id)}
-                className="mt-4 bg-destructive px-4 py-2 rounded self-start"
-              >
-                <Text className="text-white font-medium">Retry</Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })()
+        <View className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
+          <Text className="text-destructive font-medium">Error loading functions</Text>
+          <Text className="text-destructive/80 text-sm mt-1">{error}</Text>
+          <TouchableOpacity 
+            onPress={() => currentProject?.$id && fetchFunctions(currentProject.$id)}
+            className="mt-4 bg-destructive px-4 py-2 rounded self-start"
+          >
+            <Text className="text-white font-medium">Retry</Text>
+          </TouchableOpacity>
+        </View>
       ) : !currentProject ? (
-        (() => {
-          console.log('Rendering: NO PROJECT STATE');
-          return (
-            <View className="flex-1 items-center justify-center p-8">
-              <Icon as={AlertCircle} size={48} color="#9ca3af" />
-              <Text className="text-muted-foreground text-center mt-4">No project selected</Text>
-            </View>
-          );
-        })()
+        <View className="flex-1 items-center justify-center p-8">
+          <Icon as={AlertCircle} size={48} color="#9ca3af" />
+          <Text className="text-muted-foreground text-center mt-4">No project selected</Text>
+        </View>
       ) : functions.length === 0 ? (
-        (() => {
-          console.log('Rendering: EMPTY STATE');
-          return (
-            <View className="flex-1 items-center justify-center p-8 bg-card rounded-lg border border-border">
-              <Icon as={Code} size={64} color="#9ca3af" />
-              <Text className="text-foreground text-xl font-bold mt-4">No functions yet</Text>
-              <Text className="text-muted-foreground text-center mt-2 mb-6">
-                Create your first serverless function to get started
-              </Text>
-              <TouchableOpacity 
-                onPress={() => console.log('Create function')}
-                className="bg-primary px-6 py-3 rounded-lg flex-row items-center"
-              >
-                <Icon as={Plus} size={20} color="white"/>
-                <Text className="text-white font-semibold ml-2">Create your first function</Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })()
+        <View className="flex-1 items-center justify-center p-8 bg-card rounded-lg border border-border">
+          <Icon as={Code} size={64} color="#9ca3af" />
+          <Text className="text-foreground text-xl font-bold mt-4">No functions yet</Text>
+          <Text className="text-muted-foreground text-center mt-2 mb-6">
+            Create your first serverless function to get started
+          </Text>
+          <TouchableOpacity 
+            onPress={() => ToastAndroid.show('Function creation coming soon', ToastAndroid.SHORT)}
+            className="bg-primary px-6 py-3 rounded-lg flex-row items-center"
+          >
+            <Icon as={Plus} size={20} color="white"/>
+            <Text className="text-white font-semibold ml-2">Create your first function</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
-        (() => {
-          console.log('Rendering: DATA TABLE with', functions.length, 'functions');
-          return (
-            <DataTable 
-              data={functions}
-              columns={columns}
-              showSearch={true}
-              showColumnSelector={true}
-              searchPlaceholder="Search by name or ID..."
-              filterKey="name"
-              onRowPress={(func) => console.log('Function pressed:', func.$id)}
-              onDeleteSelected={handleDeleteSelected}
-            />
-          );
-        })()
+        <DataTable 
+          data={functions}
+          columns={columns}
+          showSearch={true}
+          showColumnSelector={true}
+          searchPlaceholder="Search by name or ID..."
+          filterKey="name"
+          onRowPress={(func) => console.log('Function pressed:', func.$id)}
+          onDeleteSelected={handleDeleteSelected}
+        />
       )}
+
     </View>
   );
 };

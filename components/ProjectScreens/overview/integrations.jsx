@@ -29,9 +29,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
 
 import TabSwitcher from '../../blocks/TabSwitcher';
 import DataTable from '../../blocks/DataTable';
-import { CreatePlatformModal } from '../../Project/CreatePlatformModal';
-import { CreateApiKeyModal } from '../../Project/CreateApiKeyModal';
-import { CreateDevKeyModal } from '../../Project/CreateDevKeyModal';
+import { CreatePlatformModal } from './modals/CreatePlatformModal';
+import { CreateApiKeyModal } from './modals/CreateApiKeyModal';
+import { CreateDevKeyModal } from './modals/CreateDevKeyModal';
 
 const TABS = [
     { route: 'platforms', label: 'Platforms' },

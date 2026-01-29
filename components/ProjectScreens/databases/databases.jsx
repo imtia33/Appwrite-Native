@@ -4,9 +4,14 @@ import { useProjectStore } from '../../../appwrite/store/projectStore';
 import useDatabaseStore from '../../../appwrite/data-services/databaseService';
 import DataTable from '../../blocks/DataTable';
 import { Icon } from '../../ui/icon';
-import { Copy, Database, Plus, AlertTriangle } from 'lucide-react-native';
+import { Copy, Database, Plus, AlertTriangle, MoreHorizontal, Trash2 } from 'lucide-react-native';
 import { useTheme } from '../../../lib/theme-context';
 import * as Clipboard from 'expo-clipboard';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu';
+import CreateDatabaseModal from './CreateDatabaseModal';
+import DeleteDatabaseModal from './DeleteDatabaseModal';
+import EditDatabaseModal from './EditDatabaseModal';
+import { Pencil } from 'lucide-react-native';
 
 const formatDate = (dateString, type = 'full') => {
   const date = new Date(dateString);
@@ -20,11 +25,17 @@ const Databases = () => {
   const { theme } = useTheme();
   const { currentProject } = useProjectStore();
   
-  const { fetchDatabases, getDatabases, isLoading, getError } = useDatabaseStore();
+  const { fetchDatabases, getDatabases, isLoading, getError, createDatabase, updateDatabase, deleteDatabase, backupPolicies } = useDatabaseStore();
   
   const databases = currentProject?.$id ? getDatabases(currentProject.$id) : [];
   const loading = isLoading();
   const error = getError();
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedDatabase, setSelectedDatabase] = useState(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   useEffect(() => {
     if (currentProject?.$id) {
@@ -32,9 +43,63 @@ const Databases = () => {
     }
   }, [currentProject?.$id, fetchDatabases]);
 
+  useEffect(() => {
+    if (databases.length > 0 && currentProject?.$id) {
+      databases.forEach(db => {
+        if (!backupPolicies[db.$id]) {
+          useDatabaseStore.getState().fetchBackupPolicies(currentProject.$id, currentProject.region || 'fra', db.$id);
+        }
+      });
+    }
+  }, [databases, currentProject?.$id, backupPolicies]);
+
   const copyToClipboard = async (text) => {
     await Clipboard.setStringAsync(text);
     ToastAndroid.show('Copied to clipboard', ToastAndroid.SHORT);
+  };
+
+  const handleCreateDatabase = async (name, databaseId) => {
+    if (!currentProject) return;
+    setIsActionLoading(true);
+    try {
+      await createDatabase(currentProject.$id, currentProject.region || 'fra', name, databaseId);
+      setCreateModalOpen(false);
+      ToastAndroid.show('Database created successfully', ToastAndroid.SHORT);
+    } catch (err) {
+      ToastAndroid.show(`Error: ${err.message}`, ToastAndroid.LONG);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleUpdateDatabase = async (databaseId, name) => {
+    if (!currentProject) return;
+    setIsActionLoading(true);
+    try {
+      await updateDatabase(currentProject.$id, currentProject.region || 'fra', databaseId, name);
+      setEditModalOpen(false);
+      setSelectedDatabase(null);
+      ToastAndroid.show('Database updated successfully', ToastAndroid.SHORT);
+    } catch (err) {
+      ToastAndroid.show(`Error: ${err.message}`, ToastAndroid.LONG);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleDeleteDatabase = async (databaseId) => {
+    if (!currentProject) return;
+    setIsActionLoading(true);
+    try {
+      await deleteDatabase(currentProject.$id, currentProject.region || 'fra', databaseId);
+      setDeleteModalOpen(false);
+      setSelectedDatabase(null);
+      ToastAndroid.show('Database deleted successfully', ToastAndroid.SHORT);
+    } catch (err) {
+      ToastAndroid.show(`Error: ${err.message}`, ToastAndroid.LONG);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const columns = [
@@ -82,14 +147,22 @@ const Databases = () => {
       id: 'backup',
       header: 'Backups',
       width: 200,
-      cell: ({ row }) => (
-        <View className="flex-row items-center gap-1">
-          <Icon as={AlertTriangle} size={12} color="#f59e0b" />
-          <Text className="text-muted-foreground text-xs" numberOfLines={1}>
-            No backup policies
-          </Text>
-        </View>
-      )
+      cell: ({ row }) => {
+        const policies = backupPolicies[row.original.$id] || [];
+        const hasPolicies = policies.length > 0;
+        return (
+          <View className="flex-row items-center gap-1">
+            <Icon 
+              as={AlertTriangle} 
+              size={12} 
+              color={hasPolicies ? "#10b981" : "#f59e0b"} 
+            />
+            <Text className="text-muted-foreground text-xs" numberOfLines={1}>
+              {hasPolicies ? `${policies.length} policy(ies)` : 'No backup policies'}
+            </Text>
+          </View>
+        );
+      }
     },
     {
       id: '$createdAt',
@@ -114,6 +187,42 @@ const Databases = () => {
           <Text className="text-muted-foreground text-[10px]">{formatDate(row.original.$updatedAt, 'time')}</Text>
         </View>
       )
+    },
+    {
+      id: 'actions',
+      header: '',
+      width: 50,
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <TouchableOpacity className="p-2">
+              <Icon as={MoreHorizontal} size={18} color="gray" />
+            </TouchableOpacity>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 border-border">
+            <DropdownMenuItem 
+              onPress={() => {
+                setSelectedDatabase(row.original);
+                setEditModalOpen(true);
+              }}
+              className="flex-row items-center gap-2"
+            >
+              <Icon as={Pencil} size={16} color="gray" />
+              <Text className="text-foreground font-medium">Update</Text>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onPress={() => {
+                setSelectedDatabase(row.original);
+                setDeleteModalOpen(true);
+              }}
+              className="flex-row items-center gap-2"
+            >
+              <Trash2 size={16} color="#ef4444" />
+              <Text className="text-destructive font-medium">Delete</Text>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
     }
   ];
 
@@ -135,7 +244,7 @@ const Databases = () => {
       </View>
 
       <TouchableOpacity 
-        onPress={() => console.log('Create database')}
+        onPress={() => setCreateModalOpen(true)}
         className="bg-primary px-4 py-2 rounded-lg flex-row items-center max-w-48 items-center justify-center"
       >
         <Icon as={Plus} size={18} color="white"/>
@@ -164,6 +273,29 @@ const Databases = () => {
           onRowPress={(database) => console.log('Database pressed:', database.$id)}
         />
       )}
+
+      <CreateDatabaseModal 
+        open={createModalOpen} 
+        onOpenChange={setCreateModalOpen}
+        onCreate={handleCreateDatabase}
+        isLoading={isActionLoading}
+      />
+
+      <EditDatabaseModal 
+        open={editModalOpen} 
+        onOpenChange={setEditModalOpen}
+        onUpdate={handleUpdateDatabase}
+        database={selectedDatabase}
+        isLoading={isActionLoading}
+      />
+
+      <DeleteDatabaseModal 
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        onConfirm={handleDeleteDatabase}
+        database={selectedDatabase}
+        isLoading={isActionLoading}
+      />
     </View>
   );
 };

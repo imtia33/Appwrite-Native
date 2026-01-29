@@ -35,8 +35,8 @@ export function OrganizationPicker({ organizations, selectedOrganization, setSel
         console.warn('Org not found in list for ID:', idToFind);
       }
     }}>
-      <SelectTrigger ref={ref} className="w-auto border border-0 bg-transparent dark:text-muted-foreground">
-        <SelectValue className="font-semibold text-muted-foreground" placeholder={selectedOrganization?.name} />
+      <SelectTrigger ref={ref} className="w-auto border border-0 bg-transparent">
+        <SelectValue className="font-medium text-foreground dark:text-white" placeholder={selectedOrganization?.name || "Select Organization"} />
       </SelectTrigger>
       <SelectContent insets={contentInsets} className="w-[180px]">
         <SelectGroup>

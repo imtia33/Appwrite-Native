@@ -29,8 +29,8 @@ export function ProjectPicker({ projects, selectedProject, setSelectedProject })
         setSelectedProject(project);
       }
     }}>
-      <SelectTrigger ref={ref} className="w-auto border border-0 bg-transparent dark:text-muted-foreground">
-        <SelectValue className="font-semibold text-muted-foreground" placeholder={selectedProject?.name || "Select Project"} />
+      <SelectTrigger ref={ref} className="w-auto border border-0 bg-transparent">
+        <SelectValue className="font-medium text-foreground dark:text-white" placeholder={selectedProject?.name || "Select Project"} />
       </SelectTrigger>
       <SelectContent insets={contentInsets} className="w-[180px]">
         <SelectGroup>

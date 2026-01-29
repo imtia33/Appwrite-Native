@@ -101,6 +101,19 @@ const ProjectDashboard = () => {
                     useNativeDriver: true,
                 }).start(() => {
                     setIsSidebarOpen(true);
+                    // Auto-select first screen if none selected
+                    if (!activeScreen) {
+                        const categoryScreens = SCREEN_MAP[activeCategory]?.screens;
+                        if (categoryScreens && categoryScreens.length > 0) {
+                            const firstScreenId = categoryScreens[0].id;
+                            setActiveScreen(firstScreenId);
+                            setVisitedScreens(prev => new Set(prev).add(firstScreenId));
+                            setRecentScreens(prev => ({
+                                ...prev,
+                                [activeCategory]: firstScreenId
+                            }));
+                        }
+                    }
                 });
             } else {
                 const currentPos = Math.min(SCREEN_WIDTH, SCREEN_WIDTH + translationX);
@@ -175,7 +188,26 @@ const ProjectDashboard = () => {
         }
     }, [currentOrganization?.$id]);
 
-    const openSidebar = () => {
+    const openSidebar = (screenId = null) => {
+        // If no screenId provided and no active screen, auto-select first screen
+        let finalScreenId = screenId;
+        if (!finalScreenId && !activeScreen) {
+            const categoryScreens = SCREEN_MAP[activeCategory]?.screens;
+            if (categoryScreens && categoryScreens.length > 0) {
+                finalScreenId = categoryScreens[0].id;
+            }
+        }
+        
+        // Set the screen before opening sidebar
+        if (finalScreenId && finalScreenId !== activeScreen) {
+            setActiveScreen(finalScreenId);
+            setVisitedScreens(prev => new Set(prev).add(finalScreenId));
+            setRecentScreens(prev => ({
+                ...prev,
+                [activeCategory]: finalScreenId
+            }));
+        }
+        
         dragX.setValue(0);
         Animated.timing(sidebarX, {
             toValue: 0,
@@ -212,8 +244,8 @@ const ProjectDashboard = () => {
             ...prev,
             [activeCategory]: screenId
         }));
-        // Ensure the screen is rendered before opening the sidebar
-        setTimeout(openSidebar, 0); // Delay sidebar opening slightly to allow screen rendering
+        // Open sidebar with the selected screen
+        openSidebar(screenId);
     };
 
     const ActiveComponent = activeScreen ? SCREEN_COMPONENTS[activeScreen] : null;

@@ -135,7 +135,7 @@ TableColumnHeader.displayName = 'TableColumnHeader';
 const TableColumnCell = React.forwardRef(({ className, children, ...props }, ref) => (
     <View
         ref={ref}
-        className={cn('px-4 border-b border-border justify-center', className)}
+        className={cn('border-b border-border justify-center', className)}
         {...props}
     >
         {typeof children === 'string' || typeof children === 'number' ? (

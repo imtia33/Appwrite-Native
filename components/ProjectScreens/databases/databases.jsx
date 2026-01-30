@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, ToastAndroid } from 'react-native';
 import React, { useState, useEffect } from 'react';
+import { router } from 'expo-router';
 import { useProjectStore } from '../../../appwrite/store/projectStore';
 import useDatabaseStore from '../../../appwrite/data-services/databaseService';
 import DataTable from '../../blocks/DataTable';
@@ -270,7 +271,12 @@ const Databases = () => {
           showColumnSelector={true}
           searchPlaceholder="Search by name or ID..."
           filterKey="name"
-          onRowPress={(database) => console.log('Database pressed:', database.$id)}
+          onRowPress={(database) => {
+            router.push({
+              pathname: '/databases',
+              params: { databaseId: database.$id }
+            });
+          }}
         />
       )}
 

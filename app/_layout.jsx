@@ -70,6 +70,12 @@ export default function RootLayout() {
                 headerShown: false,
               }}
             />
+            <Stack.Screen
+              name="databases"
+              options={{
+                headerShown: false,
+              }}
+            />
           </Stack>
           <PortalHost />
         </GlobalProvider>

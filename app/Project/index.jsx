@@ -57,8 +57,14 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ProjectDashboard = () => {
     const { theme } = useTheme();
-    const { projects, currentProject, setCurrentProject, fetchProjects } = useProjectStore();
-    const { organizations, currentOrganization, setCurrentOrganization } = useOrganizationStore();
+    const projects = useProjectStore(state => state.projects);
+    const currentProject = useProjectStore(state => state.currentProject);
+    const setCurrentProject = useProjectStore(state => state.setCurrentProject);
+    const fetchProjects = useProjectStore(state => state.fetchProjects);
+
+    const organizations = useOrganizationStore(state => state.organizations);
+    const currentOrganization = useOrganizationStore(state => state.currentOrganization);
+    const setCurrentOrganization = useOrganizationStore(state => state.setCurrentOrganization);
     
     const [activeCategory, setActiveCategory] = useState('overview');
     const [activeScreen, setActiveScreen] = useState(null);
@@ -228,6 +234,7 @@ const ProjectDashboard = () => {
             useNativeDriver: true,
         }).start(() => {
             setIsSidebarOpen(false);
+            setActiveScreen(null);
         });
     };
 

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useMemo, memo, useCallback, useEffect, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, FlatList, InteractionManager, Animated } from 'react-native';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, TableColumn, TableColumnHeader, TableColumnCell } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -10,7 +10,89 @@ import { Checkbox } from '../ui/checkbox';
 import { cn } from '../../lib/utils';
 import { Card } from '../ui/card';
 
-const DataTable = ({
+const DataRow = memo(({ 
+    item, 
+    index, 
+    displayedColumns, 
+    onRowPress, 
+    isSelected, 
+    toggleSelectRow, 
+    showGridLines, 
+    ROW_HEIGHT,
+    selectColumnKey,
+    scrollX
+}) => {
+    return (
+        <View className="flex-row">
+            {displayedColumns.map((column) => {
+                const isSticky = column.id === 'select';
+                return (
+                <View 
+                    key={`cell-${item.$id || item.id || 'row'}-${column.id || column.accessorKey}`}
+                    className={cn(showGridLines && "border-r border-border")}
+                    style={{ 
+                        width: column.width || 150, 
+                        zIndex: isSticky ? 50 : 0 
+                    }}
+                >
+                    <Animated.View
+                        style={isSticky ? {
+                            transform: [{ translateX: scrollX }],
+                            zIndex: 50,
+                            height: ROW_HEIGHT,
+                            backgroundColor: index % 2 === 0 ? '#09090b' : '#121215', // Ensure solid background (approximate dark theme colors)
+                        } : { height: ROW_HEIGHT }}
+                    > 
+                    <TableColumnCell
+                        style={{ height: ROW_HEIGHT, flex: 1 }}
+                        className={cn(!isSticky && (index % 2 === 0 ? "bg-background" : "bg-muted/10"))}
+                    >
+                        {column.id === 'select' ? (
+                                <TouchableOpacity 
+                                    onPress={() => toggleSelectRow(item.$id || item.id)}
+                                    className="flex-1 w-full items-center justify-center"
+                                >
+                                    {isSelected ? (
+                                        <Checkbox
+                                            checked={true}
+                                            onCheckedChange={() => toggleSelectRow(item.$id || item.id)}
+                                        />
+                                    ) : (
+                                        selectColumnKey && item[selectColumnKey] !== undefined ? (
+                                            <Text className="text-muted-foreground text-xs font-mono">{item[selectColumnKey]}</Text>
+                                        ) : (
+                                            <Checkbox
+                                                checked={false}
+                                                onCheckedChange={() => toggleSelectRow(item.$id || item.id)}
+                                            />
+                                        )
+                                    )}
+                                </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                activeOpacity={onRowPress ? 0.7 : 1}
+                                onPress={() => onRowPress?.(item)}
+                                className="flex-1 w-full justify-center px-4"
+                                disabled={!onRowPress || column.id === 'actions'}
+                            >
+                                {column.cell ? (
+                                    column.cell({ row: { original: item } })
+                                ) : (
+                                    <Text className="text-foreground text-sm" numberOfLines={1}>
+                                        {item[column.accessorKey]}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        )}
+                    </TableColumnCell>
+                    </Animated.View>
+                </View>
+            )})}
+        </View>
+    );
+});
+
+const DataTable = memo(({
     data,
     columns,
     onRowPress,
@@ -21,6 +103,11 @@ const DataTable = ({
     showSearch = false,
     showColumnSelector = false,
     onDeleteSelected,
+    showGridLines = false,
+    onEndReached,
+    onEndReachedThreshold = 0.5,
+    isLoadingMore = false,
+    selectColumnKey = null,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [visibleColumns, setVisibleColumns] = useState(
@@ -28,6 +115,15 @@ const DataTable = ({
     );
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [page, setPage] = useState(0);
+
+    // Sync visible columns when columns prop changes (e.g. after data load)
+    const columnsHash = columns.map(c => `${c.id || c.accessorKey}:${c.hidden ? 'h' : 'v'}`).join('|');
+
+    useEffect(() => {
+        setVisibleColumns(
+            columns.filter(col => !col.hidden).map(col => col.id || col.accessorKey)
+        );
+    }, [columnsHash]); // Rely on hash to avoid unnecessary resets on re-renders
 
     // Filtering
     const filteredData = useMemo(() => {
@@ -47,37 +143,44 @@ const DataTable = ({
 
 
 
-    const toggleColumn = (columnId) => {
-        setVisibleColumns(prev =>
-            prev.includes(columnId)
-                ? prev.filter(id => id !== columnId)
-                : [...prev, columnId]
-        );
-    };
+    const toggleColumn = useCallback((columnId) => {
+        InteractionManager.runAfterInteractions(() => {
+            setVisibleColumns(prev =>
+                prev.includes(columnId)
+                    ? prev.filter(id => id !== columnId)
+                    : [...prev, columnId]
+            );
+        });
+    }, []);
 
-    const toggleSelectAll = () => {
+    const toggleSelectAll = useCallback(() => {
         if (selectedRows.size === paginatedData.length) {
             setSelectedRows(new Set());
         } else {
             setSelectedRows(new Set(paginatedData.map(item => item.$id || item.id)));
         }
-    };
+    }, [paginatedData, selectedRows.size]);
 
-    const toggleSelectRow = (id) => {
-        const newSelected = new Set(selectedRows);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
-        } else {
-            newSelected.add(id);
-        }
-        setSelectedRows(newSelected);
-    };
+    const toggleSelectRow = useCallback((id) => {
+        setSelectedRows(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) {
+                newSelected.delete(id);
+            } else {
+                newSelected.add(id);
+            }
+            return newSelected;
+        });
+    }, []);
 
-    const displayedColumns = columns.filter(col =>
-        visibleColumns.includes(col.id || col.accessorKey) || col.id === 'actions' || col.id === 'select'
-    );
+    const displayedColumns = useMemo(() => 
+        columns.filter(col =>
+            visibleColumns.includes(col.id || col.accessorKey) || col.id === 'actions' || col.id === 'select'
+        ),
+    [columns, visibleColumns]);
 
     const ROW_HEIGHT = 60;
+    const scrollX = useRef(new Animated.Value(0)).current;
 
     return (
         <View className="w-full flex-1">
@@ -102,7 +205,7 @@ const DataTable = ({
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm" className="flex-row items-center gap-2">
                                     <Icon as={SlidersHorizontal} size={16} color="gray" />
-                                    <Text className="text-sm font-medium text-foreground">Columns</Text>
+                                    
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
@@ -123,69 +226,93 @@ const DataTable = ({
                     )}
                 </View>
             )}
-            <Card className="flex-1">
-            <View className="flex-1 overflow-hidden">
-                <ScrollView 
+                <Animated.ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={true}
                     nestedScrollEnabled={true}
+                    scrollEventThrottle={16}
+                    onScroll={Animated.event(
+                        [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                        { useNativeDriver: true }
+                    )}
                 >
-                    <View className="flex-row">
-                        {displayedColumns.map((column) => (
-                            <TableColumn
-                                key={column.id || column.accessorKey}
-                                className={cn(column.className)}
-                                style={{ width: column.width || 150 }}
-                            >
-                                <TableColumnHeader>
+                    <View className="flex-1">
+                        {/* Sticky Header Row */}
+                        <View className="flex-row" style={{ backgroundColor: '#19191c' }}>
+                            {displayedColumns.map((column) => {
+                                const isSticky = column.id === 'select';
+                                return (
+                                <Animated.View 
+                                    key={`header-${column.id || column.accessorKey}`}
+                                    style={isSticky ? {
+                                        transform: [{ translateX: scrollX }],
+                                        zIndex: 100,
+                                        width: column.width || 150,
+                                        backgroundColor: '#0d0d12ff' // Ensure solid header background
+                                    } : {
+                                        width: column.width || 150,
+                                    }}
+                                >
+                                <TableColumnHeader 
+                                    className="justify-center items-center h-12 border-b border-r border-border"
+                                    style={{ width: '100%', backgroundColor: '#0d0d12ff' }}
+                                >
                                     {column.id === 'select' ? (
-                                        <Checkbox
-                                        
-                                            checked={selectedRows.size === paginatedData.length && paginatedData.length > 0}
-                                            onCheckedChange={toggleSelectAll}
-                                        />
+                                        <View className="flex-1 items-center justify-center">
+                                            <Checkbox
+                                                checked={selectedRows.size === paginatedData.length && paginatedData.length > 0}
+                                                onCheckedChange={toggleSelectAll}
+                                            />
+                                        </View>
                                     ) : (
                                         column.header
                                     )}
                                 </TableColumnHeader>
+                                </Animated.View>
+                            )})}
+                        </View>
 
-                                {paginatedData.length > 0 ? (
-                                    paginatedData.map((item, index) => (
-                                        <TableColumnCell
-                                            key={`${item.$id || item.id || 'row'}-${index}`}
-                                            style={{ height: ROW_HEIGHT }}
-                                            className={cn(index % 2 === 0 ? "bg-background" : "bg-muted/10")}
-                                        >
-                                            {column.id === 'select' ? (
-                                                <Checkbox
-                                                    checked={selectedRows.has(item.$id || item.id)}
-                                                    onCheckedChange={() => toggleSelectRow(item.$id || item.id)}
-                                                />
-                                            ) : column.cell ? (
-                                                column.cell({ row: { original: item } })
-                                            ) : (
-                                                <Text className="text-foreground text-sm" numberOfLines={1}>
-                                                    {item[column.accessorKey]}
-                                                </Text>
-                                            )}
-                                        </TableColumnCell>
-                                    ))
-                                ) : (
-                                    <View className="h-32 items-center justify-center">
-                                        {/* Show message only once if needed, but in column-based we might need a better empty state */}
-                                    </View>
-                                )}
-                            </TableColumn>
-                        ))}
+                        {/* Scrollable Body - Using FlatList for Virtualization */}
+                        <FlatList
+                            data={paginatedData}
+                            renderItem={({ item, index }) => (
+                                <DataRow 
+                                    item={item}
+                                    index={index}
+                                    displayedColumns={displayedColumns}
+                                    onRowPress={onRowPress}
+                                    isSelected={selectedRows.has(item.$id || item.id)}
+                                    toggleSelectRow={toggleSelectRow}
+                                    showGridLines={showGridLines}
+                                    ROW_HEIGHT={ROW_HEIGHT}
+                                    selectColumnKey={selectColumnKey}
+                                    scrollX={scrollX}
+                                />
+                            )}
+                            keyExtractor={(item, index) => item.$id || item.id || String(index)}
+                            onEndReached={onEndReached}
+                            onEndReachedThreshold={onEndReachedThreshold}
+                            ListFooterComponent={() => isLoadingMore ? (
+                                <View className="py-4 items-center justify-center">
+                                    <Text className="text-muted-foreground text-xs font-medium">Loading more...</Text>
+                                </View>
+                            ) : null}
+                            showsVerticalScrollIndicator={true}
+                            removeClippedSubviews={true} // Performance optimization
+                            initialNumToRender={10}
+                            maxToRenderPerBatch={10}
+                            windowSize={5}
+                            getItemLayout={(data, index) => (
+                                { length: ROW_HEIGHT, offset: ROW_HEIGHT * index, index }
+                            )}
+                        />
                     </View>
-                </ScrollView>
+                </Animated.ScrollView>
                 {paginatedData.length === 0 && (
                     <View className="h-32 items-center justify-center p-4">
                         <Text className="text-muted-foreground italic">No results found.</Text>
                     </View>
                 )}
-            </View>
-            </Card>
 
             {pagination && filteredData.length > itemsPerPage && (
                 <View className="flex-row items-center justify-between py-4 px-1">
@@ -269,7 +396,7 @@ const DataTable = ({
             )}
         </View>
     );
-};
+});
 
 
 export default DataTable;

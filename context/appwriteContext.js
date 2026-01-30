@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 import { getCurrentUser, getUserAvatar } from "@/appwrite/auth/auth";
 import { useOrganizationStore } from "@/appwrite/store/organizationStore";
+import { useProjectStore } from "@/appwrite/store/projectStore";
 
 const GlobalContext = createContext();
 export const useGlobalContext = () => useContext(GlobalContext);
@@ -14,6 +15,13 @@ const GlobalProvider = ({ children }) => {
   const [isCloud, setIsCloud] = useState(true); // Default to true for now
 
   const { currentOrganization, organizations, fetchOrganizations, setCurrentOrganization } = useOrganizationStore();
+  const { fetchProjects } = useProjectStore();
+
+  useEffect(() => {
+    if (currentOrganization?.$id) {
+      fetchProjects(currentOrganization.$id);
+    }
+  }, [currentOrganization?.$id]);
 
   useEffect(() => {
     setLoading(true);

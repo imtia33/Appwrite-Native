@@ -7,6 +7,7 @@ import { Icon } from '../ui/icon';
 import { FileText, Plus, Search, Trash2, Layers } from 'lucide-react-native';
 import { Button } from '../ui/button';
 import CreateIndexModal from './modal/CreateIndexModal';
+import OverviewIndexModal from './modal/OverviewIndexModal';
 
 const Indexes = ({ databaseId, collectionId }) => {
     const { currentProject } = useProjectStore();
@@ -18,6 +19,10 @@ const Indexes = ({ databaseId, collectionId }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    
+    // Overview state
+    const [selectedOverviewIndex, setSelectedOverviewIndex] = useState(null);
+    const [isOverviewOpen, setIsOverviewOpen] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!currentProject || !databaseId || !collectionId) return;
@@ -43,7 +48,7 @@ const Indexes = ({ databaseId, collectionId }) => {
         loadData();
     }, [loadData]);
 
-    const handleCreateIndex = async ({ key, type, attributes: attrKeys, orders: attrOrders }) => {
+    const handleCreateIndex = async ({ key, type, attributes: attrKeys, orders: attrOrders, lengths }) => {
         setIsProcessing(true);
         try {
             await createIndex(
@@ -54,7 +59,8 @@ const Indexes = ({ databaseId, collectionId }) => {
                 key,
                 type,
                 attrKeys,
-                attrOrders
+                attrOrders,
+                lengths
             );
             loadData();
         } catch (err) {
@@ -93,6 +99,11 @@ const Indexes = ({ databaseId, collectionId }) => {
                 }
             ]
         );
+    };
+
+    const handleRowPress = (row) => {
+        setSelectedOverviewIndex(row);
+        setIsOverviewOpen(true);
     };
 
     const columns = [
@@ -160,7 +171,7 @@ const Indexes = ({ databaseId, collectionId }) => {
     if (loading && indexes.length === 0) {
         return (
             <View className="flex-1 items-center justify-center p-8">
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color="#FD366E" />
             </View>
         );
     }
@@ -197,6 +208,7 @@ const Indexes = ({ databaseId, collectionId }) => {
                     searchPlaceholder="Search by key..."
                     filterKey="key"
                     showColumnSelector={true}
+                    onRowPress={handleRowPress}
                 />
             )}
 
@@ -204,7 +216,15 @@ const Indexes = ({ databaseId, collectionId }) => {
                 isOpen={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 attributes={attributes}
+                indexes={indexes}
                 onCreate={handleCreateIndex}
+            />
+
+            <OverviewIndexModal
+                isOpen={isOverviewOpen}
+                onOpenChange={setIsOverviewOpen}
+                index={selectedOverviewIndex}
+                attributes={attributes}
             />
         </View>
     );

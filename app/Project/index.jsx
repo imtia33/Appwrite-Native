@@ -15,8 +15,6 @@ import useAuthStore from '../../appwrite/data-services/authService';
 import useDatabaseStore from '../../appwrite/data-services/databaseService';
 import useFunctionStore from '../../appwrite/data-services/functionService';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui/button';
 
 // Screen imports
 import OverviewUsage from '@/components/ProjectScreens/overview/usage';

@@ -18,11 +18,12 @@ temp/
 *.p12
 *.key
 *.mobileprovision
+.qoder
 
 # Metro
 .metro-health-check*
 
-# debug
+# debugn
 npm-debug.*
 yarn-debug.*
 yarn-error.*

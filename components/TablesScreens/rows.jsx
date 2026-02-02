@@ -6,13 +6,8 @@ import DataTable from '../blocks/DataTable';
 import { Icon } from '../ui/icon';
 import { FileText, Plus, Upload, Filter, Search as SearchIcon, Copy, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from 'lucide-react-native';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import CreateDocumentModal from './modal/CreateDocumentModal';
-import EditDocumentModal from './modal/EditDocumentModal';
 import { Query } from '@appwrite.io/console';
-import { debounce } from '../../lib/helpers/debounce';
 import * as Clipboard from 'expo-clipboard';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { FontAwesome } from '@expo/vector-icons';
 
 const Rows = ({ databaseId, collectionId }) => {
@@ -190,7 +185,7 @@ const Rows = ({ databaseId, collectionId }) => {
     if ((cache.loading && cache.items.length === 0) || isLoadingAttributes) {
         return (
             <View className="flex-1 items-center justify-center p-8">
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color="#FD366E" />
                 <Text className="text-muted-foreground mt-4">Loading documents...</Text>
             </View>
         );
@@ -234,7 +229,7 @@ const Rows = ({ databaseId, collectionId }) => {
                 <Button 
                     size="sm" 
                     className="h-10 px-3 bg-primary"
-                    onPress={() => setIsCreateModalOpen(true)}
+                    //onPress={() => setIsCreateModalOpen(true)}
                 >
                     <Icon as={Plus} size={18} color="white" />
                 </Button>
@@ -251,7 +246,9 @@ const Rows = ({ databaseId, collectionId }) => {
                         {searchQuery ? `No results for "${searchQuery}"` : "This collection doesn't have any documents yet."}
                     </Text>
                     {!searchQuery && (
-                        <Button className="mt-6 bg-primary" onPress={() => setIsCreateModalOpen(true)}>
+                        <Button className="mt-6 bg-primary" 
+                        //onPress={() => setIsCreateModalOpen(true)}
+                        >
                             <Text className="text-white font-bold">Create First Document</Text>
                         </Button>
                     )}
@@ -269,36 +266,15 @@ const Rows = ({ databaseId, collectionId }) => {
                         isLoadingMore={isLoadingMore}
                         selectColumnKey="$sequence"
                         onRowPress={(item) => {
-                            setSelectedDocument(item);
-                            setIsEditModalOpen(true);
+                            // setSelectedDocument(item);
+                            // setIsEditModalOpen(true);
                         }}
                     />
                     
                 </View>
             )}
 
-            <CreateDocumentModal 
-                isOpen={isCreateModalOpen}
-                onOpenChange={setIsCreateModalOpen}
-                databaseId={databaseId}
-                collectionId={collectionId}
-                attributes={attributes}
-                projectId={currentProject?.$id}
-                region={currentProject?.region}
-                onCreated={() => loadDocuments('', false, limit, true)}
-            />
-
-            <EditDocumentModal 
-                isOpen={isEditModalOpen}
-                onOpenChange={setIsEditModalOpen}
-                databaseId={databaseId}
-                collectionId={collectionId}
-                document={selectedDocument}
-                attributes={attributes}
-                projectId={currentProject?.$id}
-                region={currentProject?.region}
-                onUpdated={() => loadDocuments('', false, limit, true)}
-            />
+            
         </View>
     );
 };

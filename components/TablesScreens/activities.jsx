@@ -46,12 +46,6 @@ const Activities = ({ databaseId, collectionId }) => {
             width: 150,
         },
         {
-            id: 'clientName',
-            accessorKey: 'clientName',
-            header: 'Client',
-            width: 150,
-        },
-        {
             id: 'time',
             accessorKey: 'time',
             header: 'Date',
@@ -69,7 +63,7 @@ const Activities = ({ databaseId, collectionId }) => {
     if (loading) {
         return (
             <View className="flex-1 items-center justify-center p-8">
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color="#FD366E" />
                 <Text className="text-muted-foreground mt-4">Loading activities...</Text>
             </View>
         );
@@ -88,7 +82,6 @@ const Activities = ({ databaseId, collectionId }) => {
             <DataTable
                 data={logs}
                 columns={columns}
-                showSearch={true}
                 filterKey="event"
                 searchPlaceholder="Search by event..."
             />

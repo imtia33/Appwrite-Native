@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Switch, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import { useProjectStore } from '../../../appwrite/store/projectStore';
 import { sdk } from '../../../appwrite/appwrite';
 import { Card, CardHeader, CardTitle, CardContent } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Icon } from '../../ui/icon';
+import { Switch } from '../../ui/switch';
 import { Settings, Shield, Key } from 'lucide-react-native'; // Generic icons
 import { useTheme } from '../../../lib/theme-context';
 import ProviderModal from './modals/ProviderModal';
@@ -114,19 +115,19 @@ const AuthSettings = () => {
                     <CardContent className="gap-6 pt-0">
                         <View className="flex-row flex-wrap justify-between">
                             {AUTH_METHODS.map(method => (
-                                <View key={method.key} className="w-[38%] flex-row items-center justify-between mb-4">
-                                    <Text className="text-foreground font-medium text-sm text-center align-middle mt-2">{method.label}</Text>
+                                <View key={method.key} className="w-[38%] flex-row items-center gap-2 mb-4">
                                     <View className="h-8 justify-center">
                                         {updating[method.key] ? (
                                             <ActivityIndicator size="small" color="#FD366E" />
                                         ) : (
                                             <Switch 
-                                                value={currentProject[method.key]}
-                                                onValueChange={() => toggleAuthMethod(method.key, currentProject[method.key])}
-                                                trackColor={{ false: '#3f3f46', true: '#3f3f46' }}
+                                                checked={currentProject[method.key]}
+                                                onCheckedChange={() => toggleAuthMethod(method.key, currentProject[method.key])}
                                             />
                                         )}
                                     </View>
+                                    <Text className="text-foreground font-medium text-sm text-center align-middle ">{method.label}</Text>
+                                    
                                 </View>
                             ))}
                         </View>

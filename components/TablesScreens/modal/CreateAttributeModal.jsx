@@ -1,14 +1,24 @@
 import React, { useState } from 'react';
-import { View, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { View, ScrollView, ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Icon } from '@/components/ui/icon';
-import { ChevronDown } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
+
+import AttributeString from './attributes/AttributeString';
+import AttributeInteger from './attributes/AttributeInteger';
+import AttributeFloat from './attributes/AttributeFloat';
+import AttributeBoolean from './attributes/AttributeBoolean';
+import AttributeEnum from './attributes/AttributeEnum';
+import AttributeRelationship from './attributes/AttributeRelationship';
+import AttributePoint from './attributes/AttributePoint';
+import AttributeLine from './attributes/AttributeLine';
+import AttributePolygon from './attributes/AttributePolygon';
+import AttributeDatetime from './attributes/AttributeDatetime';
+import { AttributeGeneric } from './attributes/AttributeGeneric';
 
 const ATTRIBUTE_TYPES = [
     { label: 'String', value: 'string' },
@@ -20,20 +30,10 @@ const ATTRIBUTE_TYPES = [
     { label: 'URL', value: 'url' },
     { label: 'IP', value: 'ip' },
     { label: 'Enum', value: 'enum' },
+    { label: 'Point', value: 'point' },
+    { label: 'Line', value: 'linestring' }, 
+    { label: 'Polygon', value: 'polygon' },
     { label: 'Relationship', value: 'relationship' },
-];
-
-const RELATIONSHIP_TYPES = [
-    { label: 'One-to-one', value: 'oneToOne' },
-    { label: 'One-to-many', value: 'oneToMany' },
-    { label: 'Many-to-one', value: 'manyToOne' },
-    { label: 'Many-to-many', value: 'manyToMany' },
-];
-
-const ON_DELETE_BEHAVIORS = [
-    { label: 'Set Null', value: 'setNull' },
-    { label: 'Cascade', value: 'cascade' },
-    { label: 'Restrict', value: 'restrict' },
 ];
 
 const CreateAttributeModal = ({ isOpen, onOpenChange, onCreate, collections = [] }) => {
@@ -44,6 +44,10 @@ const CreateAttributeModal = ({ isOpen, onOpenChange, onCreate, collections = []
     const [array, setArray] = useState(false);
     const [defaultValue, setDefaultValue] = useState('');
     
+    // Integer/float states
+    const [min, setMin] = useState('');
+    const [max, setMax] = useState('');
+
     // Enum states
     const [elements, setElements] = useState('');
     
@@ -55,14 +59,41 @@ const CreateAttributeModal = ({ isOpen, onOpenChange, onCreate, collections = []
     const [onDelete, setOnDelete] = useState('setNull');
 
     const [loading, setLoading] = useState(false);
+    
+    // Accordion states
+    const [typeAccordion, setTypeAccordion] = useState('');
 
     const handleCreate = async () => {
         setLoading(true);
         try {
             let data = { key, required, array };
             
-            if (type === 'string') data.size = Number(size);
-            if (type === 'enum') data.elements = elements.split(',').map(e => e.trim()).filter(e => e);
+            // Spatial types do not support array
+            if (['point', 'linestring', 'polygon'].includes(type)) {
+                delete data.array;
+            }
+
+            if (type === 'string') {
+                data.size = Number(size);
+            }
+            if (type === 'integer') {
+                if (min) data.min = parseInt(min);
+                if (max) data.max = parseInt(max);
+                if (defaultValue) data.xdefault = parseInt(defaultValue); 
+            }
+            if (type === 'double') {
+                if (min) data.min = parseFloat(min);
+                if (max) data.max = parseFloat(max);
+                if (defaultValue) data.xdefault = parseFloat(defaultValue);
+            }
+            if (type === 'boolean') {
+                if (defaultValue === 'true') data.xdefault = true;
+                if (defaultValue === 'false') data.xdefault = false;
+            }
+            if (type === 'enum') {
+                data.elements = elements.split(',').map(e => e.trim()).filter(e => e);
+            }
+
             if (type === 'relationship') {
                 data = {
                     ...data,
@@ -73,7 +104,12 @@ const CreateAttributeModal = ({ isOpen, onOpenChange, onCreate, collections = []
                     onDelete
                 };
             }
-            if (type !== 'relationship' && defaultValue) {
+            
+            // For generic string-based defaults and spatial placeholders
+            if (['string', 'email', 'url', 'ip', 'enum', 'point', 'linestring', 'polygon'].includes(type) && defaultValue) {
+                data.xdefault = defaultValue;
+            }
+            if (type === 'datetime' && defaultValue) {
                 data.xdefault = defaultValue;
             }
 
@@ -94,6 +130,8 @@ const CreateAttributeModal = ({ isOpen, onOpenChange, onCreate, collections = []
         setRequired(false);
         setArray(false);
         setDefaultValue('');
+        setMin('');
+        setMax('');
         setElements('');
         setRelatedTable('');
         setRelationType('oneToOne');
@@ -102,12 +140,68 @@ const CreateAttributeModal = ({ isOpen, onOpenChange, onCreate, collections = []
         setOnDelete('setNull');
     };
 
+    const renderAttributeDetails = () => {
+        const commonProps = {
+            required, onRequiredChange: setRequired,
+            array, onArrayChange: setArray,
+            defaultValue, onDefaultValueChange: setDefaultValue
+        };
+        
+        // Spatial types don't support array
+        const spatialProps = {
+            required, onRequiredChange: setRequired,
+            defaultValue, onDefaultValueChange: setDefaultValue
+        };
+
+        switch (type) {
+            case 'string':
+                return <AttributeString size={size} onSizeChange={setSize} {...commonProps} />;
+            case 'integer':
+                return <AttributeInteger min={min} onMinChange={setMin} max={max} onMaxChange={setMax} {...commonProps} />;
+            case 'double':
+                return <AttributeFloat min={min} onMinChange={setMin} max={max} onMaxChange={setMax} {...commonProps} />;
+            case 'boolean':
+                return <AttributeBoolean {...commonProps} />;
+            case 'enum':
+                return <AttributeEnum elements={elements} onElementsChange={setElements} {...commonProps} />;
+            case 'relationship':
+                return <AttributeRelationship 
+                    collections={collections}
+                    relatedTable={relatedTable} onRelatedTableChange={setRelatedTable}
+                    relationType={relationType} onRelationTypeChange={setRelationType}
+                    twoWay={twoWay} onTwoWayChange={setTwoWay}
+                    twoWayKey={twoWayKey} onTwoWayKeyChange={setTwoWayKey}
+                    onDelete={onDelete} onOnDeleteChange={setOnDelete}
+                />;
+            case 'point':
+                return <AttributePoint {...spatialProps} />;
+            case 'linestring':
+                return <AttributeLine {...spatialProps} />;
+            case 'polygon':
+                return <AttributePolygon {...spatialProps} />;
+            case 'datetime':
+                return <AttributeDatetime {...commonProps} />;
+            case 'email':
+            case 'url':
+            case 'ip':
+                return <AttributeGeneric {...commonProps} />;
+            default:
+                return null;
+        }
+    };
+
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[400px] w-[95%] p-0 overflow-hidden bg-background border-border">
-                <DialogHeader className="p-6 pb-0">
-                    <DialogTitle className="text-xl font-bold">Create Attribute</DialogTitle>
-                </DialogHeader>
+        <Modal 
+            visible={isOpen} 
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => onOpenChange(false)}
+        >
+            <View className="flex-1 justify-center items-center bg-black/50">
+                <View className="min-w-[350px] w-[95%] max-w-[500px] p-0 overflow-hidden bg-background border-border rounded-lg shadow-lg">
+                <View className="p-6 pb-0">
+                    <Text className="text-xl font-bold">Create Attribute</Text>
+                </View>
 
                 <ScrollView className="p-6 max-h-[60vh]">
                     <View className="gap-4">
@@ -122,168 +216,58 @@ const CreateAttributeModal = ({ isOpen, onOpenChange, onCreate, collections = []
 
                         <View className="gap-2">
                             <Label nativeID="attr-type">Type</Label>
-                            <Select 
-                                value={{ value: type, label: ATTRIBUTE_TYPES.find(t => t.value === type).label }} 
-                                onValueChange={(val) => setType(val.value)}
+                            <Accordion 
+                                type="single" 
+                                collapsible 
+                                value={typeAccordion}
+                                onValueChange={setTypeAccordion}
+                                className="w-full"
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {ATTRIBUTE_TYPES.map(t => (
-                                        <SelectItem key={t.value} value={t.value} label={t.label}>{t.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                <AccordionItem value="type" className="border rounded-md px-3 border-border bg-background">
+                                    <AccordionTrigger className="py-2 hover:no-underline">
+                                        <Text className="text-sm font-normal text-foreground">
+                                            {ATTRIBUTE_TYPES.find(t => t.value === type)?.label || 'Select type'}
+                                        </Text>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pb-2">
+                                        <View className="gap-1 mt-2">
+                                            {ATTRIBUTE_TYPES.map(t => (
+                                                <TouchableOpacity 
+                                                    key={t.value} 
+                                                    onPress={() => {
+                                                        setType(t.value);
+                                                        setTypeAccordion('');
+                                                        setDefaultValue('');
+                                                    }}
+                                                    className={`flex-row items-center justify-between p-2 rounded-sm ${type === t.value ? 'bg-accent' : ''}`}
+                                                >
+                                                    <Text className="text-sm text-foreground">{t.label}</Text>
+                                                    {type === t.value && <Icon as={Check} size={16} color="#FD366E" />}
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
                         </View>
 
-                        {type === 'string' && (
-                            <View className="gap-2">
-                                <Label nativeID="attr-size">Size (Max 21844)</Label>
-                                <Input 
-                                    keyboardType="numeric"
-                                    value={size}
-                                    onChangeText={setSize}
-                                />
-                            </View>
-                        )}
+                        {renderAttributeDetails()}
 
-                        {type === 'enum' && (
-                            <View className="gap-2">
-                                <Label nativeID="attr-elements">Elements (Comma separated)</Label>
-                                <Input 
-                                    placeholder="e.g. active, inactive, pending"
-                                    value={elements}
-                                    onChangeText={setElements}
-                                />
-                            </View>
-                        )}
-
-                        {type === 'relationship' && (
-                            <>
-                                <View className="gap-2">
-                                    <Label nativeID="rel-table">Related Table</Label>
-                                    <Select 
-                                        value={{ value: relatedTable, label: collections.find(c => c.$id === relatedTable)?.name || relatedTable }} 
-                                        onValueChange={(val) => setRelatedTable(val.value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select related table" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {collections.map(c => (
-                                                <SelectItem key={c.$id} value={c.$id} label={c.name}>{c.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </View>
-
-                                <View className="gap-2">
-                                    <Label nativeID="rel-type">Relation Type</Label>
-                                    <Select 
-                                        value={{ value: relationType, label: RELATIONSHIP_TYPES.find(t => t.value === relationType).label }} 
-                                        onValueChange={(val) => setRelationType(val.value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select relation type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {RELATIONSHIP_TYPES.map(t => (
-                                                <SelectItem key={t.value} value={t.value} label={t.label}>{t.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </View>
-
-                                <View className="flex-row items-center justify-between py-2">
-                                    <View className="flex-1 mr-4">
-                                        <Text className="text-sm font-medium">Two-way relationship</Text>
-                                    </View>
-                                    <Switch checked={twoWay} onCheckedChange={setTwoWay} />
-                                </View>
-
-                                {twoWay && (
-                                    <View className="gap-2">
-                                        <Label nativeID="rel-twoway-key">Two-way Attribute Key</Label>
-                                        <Input 
-                                            placeholder="e.g. inverse_relation"
-                                            value={twoWayKey}
-                                            onChangeText={setTwoWayKey}
-                                        />
-                                    </View>
-                                )}
-
-                                <View className="gap-2">
-                                    <Label nativeID="rel-on-delete">On Delete</Label>
-                                    <Select 
-                                        value={{ value: onDelete, label: ON_DELETE_BEHAVIORS.find(b => b.value === onDelete).label }} 
-                                        onValueChange={(val) => setOnDelete(val.value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select behavior" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {ON_DELETE_BEHAVIORS.map(b => (
-                                                <SelectItem key={b.value} value={b.value} label={b.label}>{b.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </View>
-                            </>
-                        )}
-
-                        {type !== 'relationship' && (
-                            <View className="gap-2 mt-2">
-                                <Label nativeID="attr-default">Default Value (Optional)</Label>
-                                {type === 'boolean' ? (
-                                    <View className="flex-row items-center gap-2">
-                                        <Switch 
-                                            checked={defaultValue === 'true'} 
-                                            onCheckedChange={(val) => setDefaultValue(val ? 'true' : 'false')}
-                                        />
-                                        <Text className="text-sm">{defaultValue === 'true' ? 'True' : 'False'}</Text>
-                                    </View>
-                                ) : (
-                                    <Input 
-                                        placeholder="Enter default value"
-                                        value={defaultValue}
-                                        onChangeText={setDefaultValue}
-                                        keyboardType={type === 'integer' || type === 'double' ? 'numeric' : 'default'}
-                                    />
-                                )}
-                            </View>
-                        )}
-
-                        <View className="flex-row items-center justify-between py-2 mt-4">
-                            <View className="flex-1 mr-4">
-                                <Text className="text-sm font-medium">Required</Text>
-                                <Text className="text-xs text-muted-foreground">Is this attribute required?</Text>
-                            </View>
-                            <Switch checked={required} onCheckedChange={setRequired} />
-                        </View>
-
-                        <View className="flex-row items-center justify-between py-2">
-                            <View className="flex-1 mr-4">
-                                <Text className="text-sm font-medium">Array</Text>
-                                <Text className="text-xs text-muted-foreground">Is this attribute an array?</Text>
-                            </View>
-                            <Switch checked={array} onCheckedChange={setArray} />
-                        </View>
                     </View>
+                    <View className="h-20"></View>
                 </ScrollView>
 
-                <DialogFooter className="p-6 border-t border-border flex-row gap-3">
-                    <DialogClose asChild>
-                        <Button variant="outline" className="flex-1">
-                            <Text>Cancel</Text>
-                        </Button>
-                    </DialogClose>
+                <View className="p-6 border-t border-border flex-row gap-3">
+                    <Button variant="outline" className="flex-1" onPress={() => onOpenChange(false)}>
+                        <Text>Cancel</Text>
+                    </Button>
                     <Button onPress={handleCreate} disabled={loading} className="flex-1">
                         {loading ? <ActivityIndicator color="white" /> : <Text className="text-white font-bold">Create</Text>}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </View>
+                </View>
+            </View>
+        </Modal>
     );
 };
 

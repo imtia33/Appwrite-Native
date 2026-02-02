@@ -7,7 +7,7 @@ function Card({ className, ...props }) {
     <TextClassContext.Provider value="text-card-foreground">
       <View
         className={cn(
-          'bg-card border-border flex flex-col gap-6 rounded-xl border py-2 shadow-sm shadow-black/5',
+          'bg-card border-border flex flex-col gap-2 rounded-xl border py-2 shadow-sm shadow-black/5',
           className
         )}
         {...props}

@@ -218,7 +218,7 @@ function getIconByType(type, format) {
     if (loading && attributes.length === 0) {
         return (
             <View className="flex-1 items-center justify-center p-8">
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color="#FD366E" />
             </View>
         );
     }

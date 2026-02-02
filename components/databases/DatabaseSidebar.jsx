@@ -35,7 +35,7 @@ const DatabaseSidebar = React.memo(({ databases, activeDatabaseId, onDatabaseCha
                             >
                                 <Text className={cn(
                                     "font-bold text-sm",
-                                    isActive ? "text-white" : (isDark ? "text-slate-400" : "text-slate-600")
+                                    isActive ? "text-white" : (isDark ? "text-white" : "text-slate-600")
                                 )}>
                                     {initials}
                                 </Text>

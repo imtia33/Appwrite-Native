@@ -70,7 +70,7 @@ const ThemeToggle = ({ size = 'md' }) => {
         ]}
         className={cn(
           "shadow-sm",
-          isDark ? "bg-slate-700" : "bg-white"
+          isDark ? "bg-primary" : "bg-primary"
         )}
       />
 

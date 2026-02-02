@@ -82,7 +82,7 @@ function RootStack() {
           name="Project"
           options={{
             headerShown: false,
-            animation: "slide_from_left",
+            animation: "fade_from_bottom",
           }}
         />
         <Stack.Screen
@@ -93,6 +93,13 @@ function RootStack() {
         />
         <Stack.Screen
           name="functions"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        />
+        <Stack.Screen
+          name="sites"
           options={{
             headerShown: false,
             animation: "slide_from_right",

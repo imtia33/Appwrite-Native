@@ -43,7 +43,7 @@
         --primary-foreground: #FFFFFF;
         --secondary: #2d2d31;
         --secondary-foreground: #EDEDF0;
-        --muted: #1F2937;
+        --muted: rgb(25, 26, 29);
         --muted-foreground: #969696;
         --accent: #1F2937;
         --accent-foreground: #b6b6b8;

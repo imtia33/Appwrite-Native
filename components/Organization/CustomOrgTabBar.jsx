@@ -62,8 +62,8 @@ const CustomOrgTabBar = ({
   const planInfo = getPlanInfo(selectedOrganization?.billingPlan);
 
   return (
-    <View className="bg-background pt-4">
-      <View style={{ borderBottomWidth: 1 }} className="flex-row justify-between gap-3 px-4 mb-4  border-border pb-4">
+    <View className="bg-background ">
+      <View style={{ borderBottomWidth: 1 }} className="flex-row justify-between gap-3 px-4 mb-2  border-border pb-2">
 
         <OrganizationPicker organizations={organizations} selectedOrganization={selectedOrganization} setSelectedOrganization={setSelectedOrganization} />
         <UserMenu />

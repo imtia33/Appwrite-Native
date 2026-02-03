@@ -1,0 +1,72 @@
+<script lang="ts">
+    import { page } from '$app/state';
+    import { base } from '$app/paths';
+    import { sdk } from '$lib/stores/sdk';
+    import { Dependencies } from '$lib/constants';
+    import { goto, invalidate } from '$app/navigation';
+    import Confirm from '$lib/components/confirm.svelte';
+    import { addNotification } from '$lib/stores/notifications';
+    import { Submit, trackEvent, trackError } from '$lib/actions/analytics';
+
+    export let showDelete = false;
+    export let keyIds: string[] = [];
+    export let keyType: 'api' | 'dev' = 'api';
+
+    let error: string;
+
+    const isApiKey = keyType === 'api';
+    const label = isApiKey ? 'API' : 'dev';
+    const projectId = page.params.project;
+
+    async function handleDelete() {
+        const slug = isApiKey ? 'api-keys' : 'dev-keys';
+        const event = isApiKey ? Submit.KeyDelete : Submit.DevKeyDelete;
+        const dependency = isApiKey ? Dependencies.KEYS : Dependencies.DEV_KEYS;
+
+        try {
+            await Promise.all(
+                keyIds.map((key) =>
+                    isApiKey
+                        ? sdk.forConsole.projects.deleteKey({
+                              projectId,
+                              keyId: key
+                          })
+                        : sdk.forConsole.projects.deleteDevKey({
+                              projectId,
+                              keyId: key
+                          })
+                )
+            );
+
+            await invalidate(dependency);
+            showDelete = false;
+
+            addNotification({
+                type: 'success',
+                message: `${keyIds.length} ${label} key${keyIds.length > 1 ? 's' : ''} deleted`
+            });
+
+            trackEvent(event);
+            await goto(
+                `${base}/project-${page.params.region}-${page.params.project}/overview/${slug}`
+            );
+        } catch (e) {
+            error = e.message;
+            trackError(e, event);
+        } finally {
+            keyIds = [];
+        }
+    }
+</script>
+
+<Confirm
+    bind:error
+    bind:open={showDelete}
+    submissionLoader
+    onSubmit={handleDelete}
+    title={`Delete ${label} key${keyIds.length > 1 ? 's' : ''}`}>
+    <p>
+        Are you sure you want to delete <b>{keyIds.length}</b>
+        {label} key{keyIds.length > 1 ? 's' : ''}?
+    </p>
+</Confirm>

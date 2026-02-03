@@ -12,12 +12,10 @@ const OverView = () => {
   const { user } = useGlobalContext();
 
   const handleNameUpdate = (data) => {
-    console.log('Update name:', data)
     // TODO: Implement name update logic
   }
 
   const handleEmailUpdate = (data) => {
-    console.log('Update email:', data)
     // TODO: Implement email update logic
   }
 

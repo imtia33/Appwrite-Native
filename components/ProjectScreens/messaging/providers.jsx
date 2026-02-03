@@ -232,6 +232,7 @@ const Providers = () => {
               searchPlaceholder="Search by name or ID..."
               filterKey="name"
               onRowPress={(p) => console.log('Provider pressed:', p.$id)}
+              //
               onDeleteSelected={handleDeleteSelected}
             />
           )}

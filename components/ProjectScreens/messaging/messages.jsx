@@ -338,6 +338,7 @@ const Messages = () => {
               searchPlaceholder="Search by ID or content..."
               filterKey="$id"
               onRowPress={(msg) => console.log('Message pressed:', msg.$id)}
+              // TODO: Implement message row press logic
               onDeleteSelected={handleDeleteSelected}
             />
           )}

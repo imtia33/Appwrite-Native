@@ -70,7 +70,7 @@ const PasswordCard = () => {
           onPress={handleUpdate}
           disabled={loading || !oldPassword || !newPassword}
         >
-          <Text className='text-lg font-regular text-foreground'>
+          <Text className='text-lg font-regular text-white'>
             {loading ? 'Updating...' : 'Update'}
           </Text>
         </Button>

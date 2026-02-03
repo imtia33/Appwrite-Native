@@ -1,9 +1,10 @@
 import {
   View,
   ScrollView,
-  RefreshControl,
+  TouchableOpacity,
   ActivityIndicator,
   Linking,
+  Alert,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useProjectStore } from "@/appwrite/store/projectStore";
@@ -12,6 +13,7 @@ import {
   Query,
   RuleType,
   DeploymentResourceType,
+  RuleTrigger,
 } from "@/appwrite/appwrite";
 import { useTheme } from "@/lib/theme-context";
 import { Text } from "@/components/ui/text";
@@ -55,12 +57,13 @@ const Domains = ({ route }) => {
             Query.equal("type", RuleType.DEPLOYMENT),
             Query.equal("deploymentResourceType", DeploymentResourceType.SITE),
             Query.equal("deploymentResourceId", siteId),
+            Query.equal("trigger", RuleTrigger.MANUAL),
           ],
         });
 
-      setDomains(domainsData.rules);
+      setDomains(domainsData.rules || []);
     } catch (error) {
-      console.error("Failed to fetch domains data", error);
+      setDomains([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -165,7 +168,7 @@ const Domains = ({ route }) => {
 
   return (
     <View className="flex-1 bg-background">
-      <View className="p-4 gap-4">
+      <View className="flex-1 p-4 gap-4">
         <View className="flex-row items-center justify-between">
           <Text className="text-lg font-bold">Project Domains</Text>
           <Button
@@ -179,104 +182,99 @@ const Domains = ({ route }) => {
           </Button>
         </View>
 
-        <DataTable
-          data={domains}
-          columns={[
-            {
-              id: "domain",
-              header: "Domain",
-              accessorKey: "domain",
-              width: 200,
-              cell: ({ row }) => (
-                <View className="gap-1">
-                  <View className="flex-row items-center gap-2">
-                    <Text
-                      className="text-sm font-medium pr-1"
-                      numberOfLines={1}
-                    >
+        {domains && domains.length > 0 ? (
+          <DataTable
+            data={domains}
+            columns={[
+              {
+                id: "domain",
+                header: "Domain",
+                accessorKey: "domain",
+                width: 300,
+                cell: ({ row }) => (
+                  <TouchableOpacity
+                    className="py-3 flex-row items-center gap-2"
+                    onPress={() =>
+                      Linking.openURL(`https://${row.original.domain}`)
+                    }
+                  >
+                    <Text className="text-sm font-medium text-foreground">
                       {row.original.domain}
                     </Text>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onPress={() =>
-                        Linking.openURL(`https://${row.original.domain}`)
-                      }
-                    >
-                      <Icon as={ExternalLink} size={12} color="gray" />
-                    </Button>
+                  </TouchableOpacity>
+                ),
+              },
+              {
+                id: "target",
+                header: "Target",
+                accessorKey: "redirectUrl",
+                width: 250,
+                cell: ({ row }) => (
+                  <View className="py-3">
+                    <Text className="text-xs text-muted-foreground font-medium">
+                      {getTargetLabel(row.original)}
+                    </Text>
                   </View>
-                  {getStatusBadge(row.original.status)}
-                </View>
-              ),
-            },
-            {
-              id: "target",
-              header: "Target",
-              width: 150,
-              cell: ({ row }) => (
-                <View className="flex-row items-center gap-1">
-                  <Icon as={ArrowRight} size={12} color="gray" />
-                  <Text
-                    className="text-xs text-muted-foreground"
-                    numberOfLines={1}
-                  >
-                    {getTargetLabel(row.original)}
-                  </Text>
-                </View>
-              ),
-            },
-            {
-              id: "actions",
-              header: "",
-              width: 50,
-              cell: ({ row }) => (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Icon as={MoreVertical} size={16} color="gray" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onPress={() => handleRetry(row.original.$id)}
-                    >
-                      <Icon
-                        as={RefreshCcw}
-                        size={14}
-                        className="mr-2"
-                        color="gray"
-                      />
-                      <Text>Retry</Text>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Icon
-                        as={Terminal}
-                        size={14}
-                        className="mr-2"
-                        color="gray"
-                      />
-                      <Text>View logs</Text>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onPress={() => handleDeleteDomain(row.original.$id)}
-                    >
-                      <Icon
-                        as={Trash2}
-                        size={14}
-                        className="mr-2 text-destructive"
-                      />
-                      <Text className="text-destructive">Delete</Text>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ),
-            },
-          ]}
-        />
+                ),
+              },
+              {
+                id: "actions",
+                header: "",
+                width: 60,
+                cell: ({ row }) => (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Icon as={MoreVertical} size={16} color="gray" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem
+                        onPress={() => handleRetry(row.original.$id)}
+                      >
+                        <Icon
+                          as={RefreshCcw}
+                          size={14}
+                          className="mr-2"
+                          color="gray"
+                        />
+                        <Text>Retry Verification</Text>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onPress={() => handleDeleteDomain(row.original.$id)}
+                      >
+                        <Icon
+                          as={Trash2}
+                          size={14}
+                          className="mr-2 text-destructive"
+                        />
+                        <Text className="text-destructive">Delete Domain</Text>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ),
+              },
+            ]}
+            pagination={true}
+            itemsPerPage={10}
+          />
+        ) : (
+          <View className="flex-1 items-center justify-center py-20 bg-muted/5 rounded-xl border border-dashed border-border mt-4">
+            <Icon
+              as={Globe}
+              size={48}
+              className="text-muted-foreground/20 mb-4"
+            />
+            <Text className="text-muted-foreground font-medium">
+              No domains found
+            </Text>
+            <Text className="text-muted-foreground text-xs mt-1">
+              Add a custom domain to your site to see it here.
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );

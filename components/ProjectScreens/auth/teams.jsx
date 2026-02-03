@@ -154,6 +154,7 @@ const AuthTeams = () => {
           searchPlaceholder="Search by name..."
           filterKey="name"
           onRowPress={(team) => console.log('Team pressed:', team.$id)}
+          // TODO: Implement team row press logic
         />
       )}
 

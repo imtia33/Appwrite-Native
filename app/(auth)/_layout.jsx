@@ -1,5 +1,4 @@
 import { Redirect, Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 
 
 const AuthLayout = () => {
@@ -11,6 +10,7 @@ const AuthLayout = () => {
           name="login"
           options={{
             headerShown: false,
+            animation:'slide_from_left'
             
           }}
         />
@@ -18,6 +18,7 @@ const AuthLayout = () => {
           name="sign-up"
           options={{
             headerShown: false,
+            animation:'slide_from_right'
             
           }}
         />

@@ -8,21 +8,21 @@ const DeleteAccountCard = () => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <Card className='p-6 gap-0 mt-6 border-primary/20 bg-primary/5'>
+    <Card className='p-6 gap-0 mt-6 border-border bg-background'>
       <CardTitle className='text-xl font-medium text-foreground'>Delete account</CardTitle>
 
       <Text className='text-sm font-regular text-muted-foreground mt-2 leading-5'>
         Your account will be permanently deleted and access will be lost to any of your teams and data. This action is irreversible.
       </Text>
 
-      <View style={{ borderTopWidth: 1 }} className='mt-8 pt-3 border-primary/20'>
+      <View style={{ borderTopWidth: 1 }} className='mt-8 pt-3 border-border'>
         <Button
-          variant="primary"
+          variant="secondary"
           style={{ width: 90 }}
           className='mt-2 self-end h-10'
           onPress={() => setShowModal(true)}
         >
-          <Text className='text-sm font-medium text-white'>Delete</Text>
+          <Text className='text-sm font-medium text-foreground'>Delete</Text>
         </Button>
       </View>
 

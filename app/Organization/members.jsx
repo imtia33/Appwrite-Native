@@ -40,13 +40,13 @@ const Members = () => {
     {
       id: 'select',
       header: 'Select',
-      className: 'w-12',
+      width: 50,
     },
     {
       accessorKey: 'userName',
       header: 'Name',
       sortable: true,
-      className: 'flex-[2]',
+      className: 'flex-[1]',
       cell: ({ row }) => {
         const item = row.original;
         const initials = item.userName ? item.userName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
@@ -94,13 +94,13 @@ const Members = () => {
     },
     {
       id: 'actions',
-      className: 'w-12',
+      width: 50,
       cell: ({ row }) => {
         const item = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <TouchableOpacity className="p-2">
+              <TouchableOpacity className="p-2 self-center">
                 <Icon as={MoreHorizontal} size={18} className="text-muted-foreground" />
               </TouchableOpacity>
             </DropdownMenuTrigger>

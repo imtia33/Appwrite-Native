@@ -105,7 +105,9 @@ function RootStack() {
             animation: "slide_from_right",
           }}
         />
+        
       </Stack>
+      <PortalHost />
     </NavigationThemeProvider>
   );
 }
@@ -134,7 +136,6 @@ export default function RootLayout() {
       <ThemeProvider>
         <GlobalProvider>
           <RootStack />
-          <PortalHost />
         </GlobalProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

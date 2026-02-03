@@ -21,7 +21,7 @@ const EmailCard = ({ user, onUpdate }) => {
         <CardTitle className='text-2xl font-regular text-foreground'>Email</CardTitle>
         {user?.emailVerification && (
           <Badge variant='success' className='mt-2'>
-            <Text className='text-lg font-regular text-foreground'>
+            <Text className='text-lg font-regular text-white'>
               Verified
             </Text>
           </Badge>
@@ -40,7 +40,7 @@ const EmailCard = ({ user, onUpdate }) => {
           className='mt-2 self-end'
           onPress={handleUpdate}
         >
-          <Text className='text-lg font-regular text-foreground'>Update</Text>
+          <Text className='text-lg font-regular text-white'>Update</Text>
         </Button>
       </View>
     </Card>

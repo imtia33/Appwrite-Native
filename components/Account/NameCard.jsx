@@ -30,7 +30,7 @@ const NameCard = ({ user, onUpdate }) => {
           className='mt-2 self-end'
           onPress={handleUpdate}
         >
-          <Text className='text-lg font-regular text-foreground'>Update</Text>
+          <Text className='text-lg font-regular text-white'>Update</Text>
         </Button>
       </View>
     </Card>

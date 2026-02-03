@@ -11,7 +11,9 @@ import Organizations from './organizations'
 import OverView from './overview'
 import Payments from './payments'
 import Sessions from './sessions'
-import { View,Text } from 'react-native'
+import { View,Text, TouchableOpacity } from 'react-native'
+import { ArrowBigLeft,ChevronLeft } from 'lucide-react-native'
+import { router } from 'expo-router'
 
 const Tab = createMaterialTopTabNavigator()
 
@@ -21,8 +23,10 @@ export default function ProfileLayout() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme === 'dark' ? '#19191D' : '#EDEDF0' }}>
-        <View style={{ borderBottomWidth: 1 }} className="flex-row justify-between gap-3 px-4 mb-4 border-border py-2 ">
-                
+        <View style={{ borderBottomWidth: 1 }} className="flex-row  gap-3 px-4 mb-4 border-border py-2 items-center ">
+                <TouchableOpacity onPress={() => router.back()}>
+                  <ChevronLeft size={24} color={theme === 'dark' ? '#EDEDF0' : '#19191D'} />
+                </TouchableOpacity>
                 <Text className="text-muted-foreground text-lg font-medium">
                   Account
                 </Text>

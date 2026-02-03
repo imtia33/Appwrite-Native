@@ -10,7 +10,13 @@ import { sdk, Query } from "@/appwrite/appwrite";
 import { useTheme } from "@/lib/theme-context";
 import { Text } from "@/components/ui/text";
 import { Icon } from "@/components/ui/icon";
-import { RefreshCw, Info, Terminal, Search } from "lucide-react-native";
+import {
+  RefreshCw,
+  Info,
+  Terminal,
+  Search,
+  FileText,
+} from "lucide-react-native";
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/blocks/DataTable";
 import { timeAgo } from "@/lib/helpers/time";
@@ -36,12 +42,6 @@ const Logs = ({ route }) => {
         Query.offset(newOffset),
         Query.orderDesc("$createdAt"),
       ];
-
-      if (search) {
-        // For sites.listLogs, search might not be supported the same way as console.listEvents
-        // But we'll follow the pattern if the search query is provided
-        queries.push(Query.equal("event", search));
-      }
 
       const logsData = await sdk
         .forProject(currentProject.region, currentProject.$id)
@@ -85,7 +85,7 @@ const Logs = ({ route }) => {
 
   return (
     <View className="flex-1 bg-background">
-      <View className="p-4 gap-4">
+      <View className="flex-1 p-4 gap-4">
         <View className="flex-row items-center gap-2">
           <View className="flex-1 relative">
             <Input
@@ -112,37 +112,89 @@ const Logs = ({ route }) => {
           data={logs}
           columns={[
             {
-              id: "event",
-              header: "Event",
-              accessorKey: "event",
-              width: 250,
+              id: "logId",
+              header: "Log ID",
+              accessorKey: "$id",
+              width: 220,
               cell: ({ row }) => (
-                <View className="flex-row items-center gap-2">
-                  <Icon as={Terminal} size={14} color="gray" />
-                  <Text className="text-xs font-medium" numberOfLines={1}>
-                    {row.original.event}
+                <View className="flex-row items-center gap-2 bg-muted/20 self-start px-2 py-1 rounded-md border border-border/50">
+                  <Icon as={FileText} size={14} color="gray" />
+                  <Text className="text-[11px] font-mono font-medium text-foreground">
+                    {row.original.$id}
                   </Text>
                 </View>
               ),
             },
             {
-              id: "ip",
-              header: "IP",
-              accessorKey: "ip",
-              width: 120,
+              id: "path",
+              header: "Path",
+              accessorKey: "requestPath",
+              width: 280,
               cell: ({ row }) => (
-                <Text className="text-xs text-muted-foreground">
-                  {row.original.ip}
+                <Text
+                  className="text-xs text-foreground py-1"
+                  numberOfLines={1}
+                >
+                  {row.original.requestPath || "/"}
+                </Text>
+              ),
+            },
+            {
+              id: "method",
+              header: "Method",
+              accessorKey: "requestMethod",
+              width: 100,
+              cell: ({ row }) => (
+                <Text className="text-xs text-foreground font-medium py-1">
+                  {(row.original.requestMethod || "get").toLowerCase()}
+                </Text>
+              ),
+            },
+            {
+              id: "status",
+              header: "Status code",
+              accessorKey: "responseStatusCode",
+              width: 100,
+              cell: ({ row }) => (
+                <View
+                  className={`px-2 py-1 rounded self-start ${
+                    row.original.responseStatusCode >= 200 &&
+                    row.original.responseStatusCode < 400
+                      ? "bg-teal-500/20"
+                      : "bg-red-500/20"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-bold ${
+                      row.original.responseStatusCode >= 200 &&
+                      row.original.responseStatusCode < 400
+                        ? "text-teal-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {row.original.responseStatusCode || "---"}
+                  </Text>
+                </View>
+              ),
+            },
+            {
+              id: "duration",
+              header: "Duration",
+              accessorKey: "duration",
+              width: 100,
+              cell: ({ row }) => (
+                <Text className="text-xs text-foreground py-1">
+                  {Math.round((row.original.duration || 0) * 1000)}ms
                 </Text>
               ),
             },
             {
               id: "created",
-              header: "Occurred",
+              header: "Created",
               accessorKey: "$createdAt",
-              width: 120,
+              width: 150,
               cell: ({ row }) => (
-                <Text className="text-xs text-muted-foreground">
+                <Text className="text-xs text-muted-foreground py-1">
                   {timeAgo(row.original.$createdAt)}
                 </Text>
               ),

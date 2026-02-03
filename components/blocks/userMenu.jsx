@@ -68,7 +68,7 @@ export function UserMenu() {
                             variant="outline"
                             size="sm"
                             onPress={() => {
-                                router.replace('/profile')
+                                router.push('/profile')
                             }}>
                             <Icon as={SettingsIcon} size={18} color={theme === 'dark' ? '#9CA3AF' : '#6B7280'} />
                             <Text>Manage Account</Text>

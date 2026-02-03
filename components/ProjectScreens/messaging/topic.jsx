@@ -217,6 +217,7 @@ const Topics = () => {
               searchPlaceholder="Search by name or ID..."
               filterKey="name"
               onRowPress={(t) => console.log('Topic pressed:', t.$id)}
+              // TODO: Implement topic row press logic
               onDeleteSelected={handleDeleteSelected}
             />
           )}

@@ -64,7 +64,7 @@ export default function SitesLayout() {
                 <TouchableOpacity onPress={() => router.back()}>
                   <Icon as={ChevronLeft} size={28} color="gray" />
                 </TouchableOpacity>
-                <Text className="text-2xl font-regular text-muted-foreground">
+                <Text className="text-2xl font-regular text-foreground">
                   {params.name}
                 </Text>
               </View>

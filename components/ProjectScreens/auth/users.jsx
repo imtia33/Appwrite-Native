@@ -184,6 +184,7 @@ const AuthUsers = () => {
           searchPlaceholder="Search by ID, name or email..."
           filterKey="name"
           onRowPress={(user) => console.log('User pressed:', user.$id)}
+          // TODO: Implement user row press logic
         />
       )}
 

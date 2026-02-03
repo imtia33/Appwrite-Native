@@ -243,6 +243,7 @@ const Buckets = () => {
           searchPlaceholder="Search by name or ID..."
           filterKey="name"
           onRowPress={(bucket) => console.log('Bucket pressed:', bucket.$id)}
+          // TODO: Implement bucket row press logic
         />
       )}
 

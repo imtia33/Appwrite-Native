@@ -143,7 +143,6 @@ const Deployments = ({ route }) => {
       // But Appwrite SDK for functions doesn't have a direct "redeploy" method that takes a deployment ID
       // It usually involves creating a new deployment from VCS or CLI.
       // However, we can simulate or show an alert for now if the specific logic is complex.
-      console.log("Redeploying deployment:", deploymentToRedeploy.$id);
     } catch (error) {
       console.error("Failed to redeploy", error);
     }
@@ -434,6 +433,7 @@ const Deployments = ({ route }) => {
               variant="secondary"
               size="sm"
               onPress={() => console.log("Execute function")}
+              // TODO: Implement execute function logic
             >
               <Icon as={Play} size={16} className="mr-2" />
               <Text>Execute</Text>

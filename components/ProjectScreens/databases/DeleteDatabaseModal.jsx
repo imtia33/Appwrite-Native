@@ -40,20 +40,21 @@ const DeleteDatabaseModal = ({ open, onOpenChange, onConfirm, database, isLoadin
           </Label>
         </View>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel onPress={() => onOpenChange(false)}>
-            <Text>Cancel</Text>
+        <AlertDialogFooter className='flex-row justify-end gap-3'>
+          <AlertDialogCancel style={{ borderColor: "#373938ff" }} onPress={() => onOpenChange(false)}>
+            <Text className="text-muted-foreground">Cancel</Text>
           </AlertDialogCancel>
           <Button 
             variant="destructive" 
             onPress={handleConfirm} 
             disabled={!confirmed || isLoading}
+            style={{ borderColor: "#373938ff" }}
             className={(!confirmed || isLoading) ? 'opacity-50' : ''}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text className="text-destructive-foreground font-semibold">Delete</Text>
+              <Text className="text-foreground font-semibold">Delete</Text>
             )}
           </Button>
         </AlertDialogFooter>

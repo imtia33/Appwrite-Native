@@ -253,7 +253,6 @@ const ProjectDashboard = () => {
         openSidebar(screenId);
     };
 
-    const ActiveComponent = activeScreen ? SCREEN_COMPONENTS[activeScreen] : null;
 
     return (
         <View style={{ flex: 1, backgroundColor: theme === 'dark' ? '#19191D' : '#EDEDF0' }}>

@@ -75,7 +75,7 @@ function getIconByType(type, format) {
   }
 }
 
-const DisplayName = ({ databaseId, collectionId }) => {
+const DisplayName = ({ databaseId, tableId }) => {
   const { currentProject } = useProjectStore();
 
   const [displayNames, setDisplayNames] = useState([]);
@@ -87,7 +87,7 @@ const DisplayName = ({ databaseId, collectionId }) => {
   // Load attributes and current preferences
   useEffect(() => {
     const init = async () => {
-      if (currentProject && databaseId && collectionId) {
+      if (currentProject && databaseId && tableId) {
         try {
           const projectSdk = sdk.forProject(
             currentProject.region || "fra",
@@ -96,13 +96,16 @@ const DisplayName = ({ databaseId, collectionId }) => {
 
           // Parallel fetch attributes and preferences
           const [attrRes, prefRes] = await Promise.all([
-            projectSdk.databases.listAttributes(databaseId, collectionId),
+            projectSdk.tablesDB.listColumns({
+              databaseId,
+              tableId,
+            }),
             sdk.forConsole.account.getPrefs(),
           ]);
 
-          setAttributes(attrRes.attributes || []);
+          setAttributes(attrRes.columns || []);
 
-          const prefKey = `displayNames_${collectionId}`;
+          const prefKey = `displayNames_${tableId}`;
           const savedNames = prefRes[prefKey] || [];
           setDisplayNames(savedNames);
         } catch (err) {
@@ -111,7 +114,7 @@ const DisplayName = ({ databaseId, collectionId }) => {
       }
     };
     init();
-  }, [currentProject, databaseId, collectionId]);
+  }, [currentProject, databaseId, tableId]);
 
   // Sync names with displayNames when displayNames change
   useEffect(() => {
@@ -182,7 +185,7 @@ const DisplayName = ({ databaseId, collectionId }) => {
     setIsUpdating(true);
     try {
       const filteredNames = names.filter(Boolean);
-      const prefKey = `displayNames_${collectionId}`;
+      const prefKey = `displayNames_${tableId}`;
 
       // Get current prefs first to preserve others
       const currentPrefs = await sdk.forConsole.account.getPrefs();

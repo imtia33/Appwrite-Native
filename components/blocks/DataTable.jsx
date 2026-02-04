@@ -272,6 +272,7 @@ const DataTable = memo(
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
+                    style={{ borderColor: "#373938ff" }}
                     size="sm"
                     className="flex-row items-center gap-2"
                   >

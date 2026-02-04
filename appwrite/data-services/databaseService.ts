@@ -5,7 +5,7 @@ import { Query } from "@appwrite.io/console";
 
 interface DatabaseState {
   databases: any[];
-  collections: Record<string, any[]>;
+  tables: Record<string, any[]>;
   backupPolicies: Record<string, any[]>;
   documentCache: Record<
     string,
@@ -22,7 +22,7 @@ interface DatabaseState {
 
 interface DatabaseActions {
   fetchDatabases: (projectId: string) => Promise<void>;
-  fetchCollections: (
+  fetchTables: (
     projectId: string,
     region: string,
     databaseId: string,
@@ -37,6 +37,7 @@ interface DatabaseActions {
     region: string,
     name: string,
     databaseId?: string,
+    enableBackups?: boolean,
   ) => Promise<any>;
   updateDatabase: (
     projectId: string,
@@ -54,11 +55,11 @@ interface DatabaseActions {
     region: string,
     databaseId: string,
   ) => Promise<void>;
-  fetchDocuments: (
+  fetchRows: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     options?: {
       queries?: any[];
       isNextPage?: boolean;
@@ -66,17 +67,17 @@ interface DatabaseActions {
       limit?: number;
     },
   ) => Promise<any[]>;
-  fetchAttributes: (
+  fetchColumns: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
   ) => Promise<any[]>;
   fetchIndexes: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
   ) => Promise<any[]>;
   fetchTableLogs: (
     projectId: string,
@@ -85,42 +86,42 @@ interface DatabaseActions {
     tableId: string,
     queries?: any[],
   ) => Promise<any[]>;
-  deleteCollection: (
+  deleteTable: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
   ) => Promise<void>;
-  createCollection: (
+  createTable: (
     projectId: string,
     region: string,
     databaseId: string,
     name: string,
-    collectionId?: string,
+    tableId?: string,
   ) => Promise<any>;
-  createDocument: (
+  createRow: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     data: any,
     permissions?: string[],
-    documentId?: string,
+    rowId?: string,
   ) => Promise<any>;
-  updateDocument: (
+  updateRow: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
-    documentId: string,
+    tableId: string,
+    rowId: string,
     data: any,
     permissions?: string[],
   ) => Promise<any>;
-  updateCollection: (
+  updateTable: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     name: string,
     permissions: string[],
     documentSecurity: boolean,
@@ -130,7 +131,7 @@ interface DatabaseActions {
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     type: string,
     data: any,
   ) => Promise<any>;
@@ -138,14 +139,14 @@ interface DatabaseActions {
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     key: string,
   ) => Promise<void>;
   createIndex: (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     key: string,
     type: string,
     attributes: string[],
@@ -156,7 +157,7 @@ interface DatabaseActions {
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     key: string,
   ) => Promise<void>;
 }
@@ -165,7 +166,7 @@ type DatabaseStore = DatabaseState & DatabaseActions;
 
 const useDatabaseStore = create<DatabaseStore>((set, get) => ({
   databases: [],
-  collections: {},
+  tables: {},
   backupPolicies: {},
   documentCache: {},
   loading: false,
@@ -175,9 +176,19 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
   fetchDatabases: async (projectId: string) => {
     const state = get();
 
-    if (
-      state.loading ||
-      (state.currentProjectId === projectId && state.databases.length > 0)
+    if (state.loading) {
+      return;
+    }
+
+    if (state.currentProjectId && state.currentProjectId !== projectId) {
+      set({
+        databases: [],
+        tables: {},
+        currentProjectId: projectId,
+      });
+    } else if (
+      state.currentProjectId === projectId &&
+      state.databases.length > 0
     ) {
       return;
     }
@@ -209,46 +220,10 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     }
   },
 
-  fetchCollections: async (
-    projectId: string,
-    region: string,
-    databaseId: string,
-    force: boolean = false,
-  ) => {
-    const state = get();
-
-    // Return early if already have collections for this database and not forcing
-    if (!force && state.collections[databaseId]) {
-      return;
-    }
-
-    set({ loading: true, error: null });
-
-    try {
-      const response = await sdk
-        .forProject(region, projectId)
-        .databases.listCollections(databaseId);
-
-      set((state) => ({
-        collections: {
-          ...state.collections,
-          [databaseId]: response.collections,
-        },
-        loading: false,
-      }));
-    } catch (error: any) {
-      console.error("Error fetching collections:", error);
-      set({
-        error: error.message,
-        loading: false,
-      });
-    }
-  },
-
   clearCache: () => {
     set({
       databases: [],
-      collections: {},
+      tables: {},
       backupPolicies: {},
       documentCache: {},
       loading: false,
@@ -275,12 +250,32 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     region: string,
     name: string,
     databaseId: string = "unique()",
+    enableBackups: boolean = false,
   ) => {
     try {
       const response = await sdk.forProject(region, projectId).tablesDB.create({
         databaseId,
         name,
       });
+
+      if (enableBackups) {
+        try {
+          await sdk
+            .forProject(region, projectId)
+            .backups.createPolicy(
+              "unique()",
+              ["databases"],
+              7,
+              "0 0 * * *",
+              `${name} Backup`,
+              response.$id,
+              true,
+            );
+        } catch (backupErr) {
+          console.error("Error creating backup policy:", backupErr);
+          // Don't fail the whole database creation if backup creation fails
+        }
+      }
 
       set((state) => ({
         databases: [response, ...state.databases],
@@ -324,7 +319,9 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     databaseId: string,
   ) => {
     try {
-      await sdk.forProject(region, projectId).databases.delete(databaseId);
+      await (sdk.forProject(region, projectId).tablesDB as any).delete(
+        databaseId,
+      );
 
       set((state) => ({
         databases: state.databases.filter((db) => db.$id !== databaseId),
@@ -356,11 +353,11 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     }
   },
 
-  fetchDocuments: async (
+  fetchRows: async (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     options: {
       queries?: any[];
       isNextPage?: boolean;
@@ -374,7 +371,7 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
       forceRefresh = false,
       limit = 25,
     } = options;
-    const cacheKey = `${databaseId}:${collectionId}`;
+    const cacheKey = `${databaseId}:${tableId}`;
     const state = get();
     const currentCache = state.documentCache[cacheKey];
 
@@ -419,10 +416,14 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
         finalQueries.push(Query.cursorAfter(lastItem.$id));
       }
 
-      const response = await sdk
-        .forProject(region, projectId)
-        .databases.listDocuments(databaseId, collectionId, finalQueries);
-      const newDocs = response.documents;
+      const response = await (
+        sdk.forProject(region, projectId).tablesDB as any
+      ).listRows({
+        databaseId,
+        tableId,
+        queries: finalQueries,
+      });
+      const newDocs = response.rows;
 
       // Smart hasMore detection
       const hasMore = newDocs.length === limit;
@@ -448,7 +449,7 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
 
       return isNextPage ? get().documentCache[cacheKey]?.items || [] : newDocs;
     } catch (error: any) {
-      console.error("Error fetching documents:", error);
+      console.error("Error fetching rows:", error);
       set((state) => ({
         documentCache: {
           ...state.documentCache,
@@ -462,19 +463,19 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     }
   },
 
-  fetchAttributes: async (
+  fetchColumns: async (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
   ) => {
     try {
-      const response = await sdk
-        .forProject(region, projectId)
-        .databases.listAttributes(databaseId, collectionId);
-      return response.attributes;
+      const response = await (
+        sdk.forProject(region, projectId).tablesDB as any
+      ).listColumns({ databaseId, tableId });
+      return response.columns;
     } catch (error: any) {
-      console.error("Error fetching attributes:", error);
+      console.error("Error fetching columns:", error);
       throw error;
     }
   },
@@ -483,12 +484,12 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
   ) => {
     try {
-      const response = await sdk
-        .forProject(region, projectId)
-        .databases.listIndexes(databaseId, collectionId);
+      const response = await (
+        sdk.forProject(region, projectId).tablesDB as any
+      ).listIndexes({ databaseId, tableId });
       return response.indexes;
     } catch (error: any) {
       console.error("Error fetching indexes:", error);
@@ -518,144 +519,181 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     }
   },
 
-  deleteCollection: async (
+  deleteTable: async (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
   ) => {
     try {
-      await sdk
-        .forProject(region, projectId)
-        .databases.deleteCollection(databaseId, collectionId);
+      await (sdk.forProject(region, projectId).tablesDB as any).deleteTable({
+        databaseId,
+        tableId,
+      });
       set((state) => ({
-        collections: {
-          ...state.collections,
-          [databaseId]: (state.collections[databaseId] || []).filter(
-            (c) => c.$id !== collectionId,
+        tables: {
+          ...state.tables,
+          [databaseId]: (state.tables[databaseId] || []).filter(
+            (c) => c.$id !== tableId,
           ),
         },
       }));
     } catch (error: any) {
-      console.error("Error deleting collection:", error);
+      console.error("Error deleting table:", error);
       throw error;
     }
   },
-  createCollection: async (
+  createTable: async (
     projectId: string,
     region: string,
     databaseId: string,
     name: string,
-    collectionId: string = "unique()",
+    tableId: string = "unique()",
   ) => {
     try {
       const response = await (
         sdk.forProject(region, projectId).tablesDB as any
       ).createTable({
         databaseId,
-        tableId: collectionId,
+        tableId,
         name,
       });
 
       set((state) => ({
-        collections: {
-          ...state.collections,
-          [databaseId]: [response, ...(state.collections[databaseId] || [])],
+        tables: {
+          ...state.tables,
+          [databaseId]: [response, ...(state.tables[databaseId] || [])],
         },
       }));
 
       return response;
     } catch (error: any) {
-      console.error("Error creating collection:", error);
+      console.error("Error creating table:", error);
       throw error;
     }
   },
-  createDocument: async (
+  fetchTables: async (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    force: boolean = false,
+  ) => {
+    const state = get();
+
+    // Return early if already have tables for this database and not forcing
+    if (!force && state.tables[databaseId]) {
+      return;
+    }
+
+    set({ loading: true, error: null });
+
+    try {
+      const response = await (
+        sdk.forProject(region, projectId).tablesDB as any
+      ).listTables({ databaseId });
+
+      set((state) => ({
+        tables: {
+          ...state.tables,
+          [databaseId]: (response as any).tables,
+        },
+        loading: false,
+      }));
+    } catch (error: any) {
+      console.error("Error fetching tables:", error);
+      set({
+        error: error.message,
+        loading: false,
+      });
+    }
+  },
+
+  createRow: async (
+    projectId: string,
+    region: string,
+    databaseId: string,
+    tableId: string,
     data: any,
     permissions?: string[],
-    documentId: string = "unique()",
+    rowId: string = "unique()",
   ) => {
     try {
-      const response = await sdk
-        .forProject(region, projectId)
-        .databases.createDocument(
-          databaseId,
-          collectionId,
-          documentId,
-          data,
-          permissions,
-        );
+      const response = await (
+        sdk.forProject(region, projectId).tablesDB as any
+      ).createRow({
+        databaseId,
+        tableId,
+        rowId,
+        data,
+        permissions,
+      });
       return response;
     } catch (error: any) {
-      console.error("Error creating document:", error);
+      console.error("Error creating row:", error);
       throw error;
     }
   },
 
-  updateDocument: async (
+  updateRow: async (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
-    documentId: string,
+    tableId: string,
+    rowId: string,
     data: any,
     permissions?: string[],
   ) => {
     try {
-      const response = await sdk
-        .forProject(region, projectId)
-        .databases.updateDocument(
-          databaseId,
-          collectionId,
-          documentId,
-          data,
-          permissions,
-        );
+      const response = await (
+        sdk.forProject(region, projectId).tablesDB as any
+      ).updateRow({
+        databaseId,
+        tableId,
+        rowId,
+        data,
+        permissions,
+      });
       return response;
     } catch (error: any) {
-      console.error("Error updating document:", error);
+      console.error("Error updating row:", error);
       throw error;
     }
   },
 
-  updateCollection: async (
+  updateTable: async (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     name: string,
     permissions: string[],
     documentSecurity: boolean,
     enabled: boolean,
   ) => {
     try {
-      const response = await sdk
-        .forProject(region, projectId)
-        .databases.updateCollection(
-          databaseId,
-          collectionId,
-          name,
-          permissions,
-          documentSecurity,
-          enabled,
-        );
+      const response = await (
+        sdk.forProject(region, projectId).tablesDB as any
+      ).updateTable({
+        databaseId,
+        tableId,
+        name,
+        permissions,
+        documentSecurity,
+        enabled,
+      });
 
       set((state) => ({
-        collections: {
-          ...state.collections,
-          [databaseId]: (state.collections[databaseId] || []).map((c) =>
-            c.$id === collectionId ? response : c,
+        tables: {
+          ...state.tables,
+          [databaseId]: (state.tables[databaseId] || []).map((c) =>
+            c.$id === tableId ? response : c,
           ),
         },
       }));
 
       return response;
     } catch (error: any) {
-      console.error("Error updating collection:", error);
+      console.error("Error updating table:", error);
       throw error;
     }
   },
@@ -664,7 +702,7 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     type: string,
     data: any,
   ) => {
@@ -674,7 +712,7 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
 
       const params = {
         databaseId,
-        tableId: collectionId,
+        tableId,
         ...data,
       };
 
@@ -724,13 +762,13 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     key: string,
   ) => {
     try {
       await (sdk.forProject(region, projectId).tablesDB as any).deleteColumn({
         databaseId,
-        tableId: collectionId,
+        tableId,
         key,
       });
     } catch (error: any) {
@@ -743,7 +781,7 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     key: string,
     type: string,
     attributes: string[],
@@ -755,7 +793,7 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
         sdk.forProject(region, projectId).tablesDB as any
       ).createIndex({
         databaseId,
-        tableId: collectionId,
+        tableId,
         key,
         type,
         attributes,
@@ -768,18 +806,17 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
       throw error;
     }
   },
-
   deleteIndex: async (
     projectId: string,
     region: string,
     databaseId: string,
-    collectionId: string,
+    tableId: string,
     key: string,
   ) => {
     try {
       await (sdk.forProject(region, projectId).tablesDB as any).deleteIndex({
         databaseId,
-        tableId: collectionId,
+        tableId,
         key,
       });
     } catch (error: any) {

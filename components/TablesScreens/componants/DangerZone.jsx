@@ -19,36 +19,34 @@ import {
   AlertDialogTrigger,
 } from "../../ui/alert-dialog";
 
-const DangerZone = ({ databaseId, collectionId }) => {
+const DangerZone = ({ databaseId, tableId }) => {
   const { currentProject } = useProjectStore();
-  const { collections, deleteCollection } = useDatabaseStore();
+  const { tables, deleteTable } = useDatabaseStore();
   const router = useRouter();
 
-  // Get collection from store
-  const collection = collections[databaseId]?.find(
-    (c) => c.$id === collectionId,
-  );
+  // Get table from store
+  const table = tables[databaseId]?.find((t) => t.$id === tableId);
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (collection) {
+    if (table) {
       setIsLoading(false);
     }
-  }, [collection]);
+  }, [table]);
 
   const handleDelete = async () => {
-    if (!currentProject || !collection) return;
+    if (!currentProject || !table) return;
 
     setIsDeleting(true);
     try {
-      await deleteCollection(
+      await deleteTable(
         currentProject.$id,
         currentProject.region || "fra",
         databaseId,
-        collectionId,
+        tableId,
       );
 
       // Close dialog
@@ -57,7 +55,7 @@ const DangerZone = ({ databaseId, collectionId }) => {
       // Navigate back to database view
       router.back();
     } catch (err) {
-      console.error("Error deleting collection:", err);
+      console.error("Error deleting table:", err);
       // We could set an error state here to show in the dialog if we wanted
     } finally {
       setIsDeleting(false);
@@ -101,13 +99,19 @@ const DangerZone = ({ databaseId, collectionId }) => {
               table
               <Text className="font-bold text-foreground">
                 {" "}
-                "{collection?.name}"{" "}
+                "{table?.name}"{" "}
               </Text>
               and remove all data associated with it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className='border-border text-muted-foreground' style={{ borderColor: "#2e2e2eff" }} disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              className="border-border text-muted-foreground"
+              style={{ borderColor: "#2e2e2eff" }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </AlertDialogCancel>
             <Button
               disabled={isDeleting}
               variant="secondary"

@@ -21,7 +21,7 @@ const EditDatabaseModal = ({ open, onOpenChange, onUpdate, database, isLoading }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="min-w-[325px]">
         <DialogHeader>
           <DialogTitle>Update database</DialogTitle>
         </DialogHeader>
@@ -39,8 +39,8 @@ const EditDatabaseModal = ({ open, onOpenChange, onUpdate, database, isLoading }
         </View>
 
         <DialogFooter className="flex-row justify-end gap-3">
-          <Button variant="outline" onPress={() => onOpenChange(false)}>
-            <Text>Cancel</Text>
+          <Button variant="outline" style={{ borderColor: "#373938ff" }} onPress={() => onOpenChange(false)}>
+            <Text className="text-muted-foreground">Cancel</Text>
           </Button>
           <Button 
             onPress={handleSubmit} 

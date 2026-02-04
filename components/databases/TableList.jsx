@@ -9,36 +9,24 @@ import {
 import { useTheme } from "../../lib/theme-context";
 import { cn } from "../../lib/utils";
 import { Table, ChevronRight, DatabaseIcon, Plus } from "lucide-react-native";
-import CreateCollectionModal from "./CreateCollectionModal";
+import CreateTableModal from "./CreateTableModal";
 import { useProjectStore } from "../../appwrite/store/projectStore";
 import useDatabaseStore from "../../appwrite/data-services/databaseService";
 import { Button } from "../ui/button";
 
-const CollectionItem = React.memo(
-  ({ collection, onCollectionChange, isDark, activeCollectionId }) => {
-
+const TableItem = React.memo(
+  ({ table, onTableChange, isDark, activeTableId }) => {
     return (
       <Pressable
-        onPress={() => onCollectionChange(collection.$id)}
+        onPress={() => onTableChange(table.$id)}
         className="flex-row items-center justify-between px-4 py-2.5 rounded-xl transition-all"
-          
       >
         <View className="flex-row items-center gap-3.5">
-          <View
-            className=
-              "p-2 rounded-lg"
-          >
-            <Table
-              size={18}
-              color='gray'
-              strokeWidth={2.2}
-            />
+          <View className="p-2 rounded-lg">
+            <Table size={18} color="gray" strokeWidth={2.2} />
           </View>
-          <Text
-            className="text-[15px] font-semibold tracking-tight text-muted-foreground"
-             
-          >
-            {collection.name}
+          <Text className="text-[15px] font-semibold tracking-tight text-muted-foreground">
+            {table.name}
           </Text>
         </View>
         <ChevronRight
@@ -51,11 +39,11 @@ const CollectionItem = React.memo(
   },
 );
 
-const CollectionList = React.memo(
+const TableList = React.memo(
   ({
-    collections,
-    activeCollectionId,
-    onCollectionChange,
+    tables,
+    activeTableId,
+    onTableChange,
     databaseName,
     databaseId,
   }) => {
@@ -65,13 +53,13 @@ const CollectionList = React.memo(
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const currentProject = useProjectStore((state) => state.currentProject);
-    const createCollection = useDatabaseStore(
-      (state) => state.createCollection,
+    const createTable = useDatabaseStore(
+      (state) => state.createTable,
     );
 
-    const handleCreateCollection = async (name, id) => {
+    const handleCreateTable = async (name, id) => {
       if (!currentProject || !databaseId) return;
-      await createCollection(
+      await createTable(
         currentProject.$id,
         currentProject.region || "fra",
         databaseId,
@@ -107,16 +95,14 @@ const CollectionList = React.memo(
               isDark ? "text-white" : "text-slate-900",
             )}
           >
-            {databaseName || "Collections"}
+            {databaseName || "Tables"}
           </Text>
-          
         </View>
-         
 
-        <CreateCollectionModal
+        <CreateTableModal
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
-          onCreate={handleCreateCollection}
+          onCreate={handleCreateTable}
           databaseId={databaseId}
         />
 
@@ -128,35 +114,34 @@ const CollectionList = React.memo(
                 isDark ? "text-slate-400" : "text-slate-500",
               )}
             >
-              Collections
+              Tables
             </Text>
           </View>
 
           <View className="px-3">
-            {collections.map((collection) => (
-              <CollectionItem
-                key={collection.$id}
-                collection={collection}
-                onCollectionChange={onCollectionChange}
+            {tables.map((table) => (
+              <TableItem
+                key={table.$id}
+                table={table}
+                onTableChange={onTableChange}
                 isDark={isDark}
-                activeCollectionId={activeCollectionId}
+                activeTableId={activeTableId}
               />
             ))}
-            {collections.length === 0 && (
+            {tables.length === 0 && (
               <Text className="text-center text-muted-foreground mt-10">
-                No collections found
+                No tables found
               </Text>
             )}
             <Button
-         variant="secondary"
-            onPress={() => setIsModalOpen(true)}
-            className="rounded-sm items-center justify-center self-start ml-3 mt-3 flex-row gap-2 w-60"
-          >
-            <Plus size={18} color={isDark ? "#F1F5F9" : "#1E293B"} />
-            <Text className="text-muted-foreground">Create Table</Text>
-           
-          </Button>
-          <View className="mb-7 h-20"/>
+              variant="secondary"
+              onPress={() => setIsModalOpen(true)}
+              className="rounded-sm items-center justify-center self-start ml-3 mt-3 flex-row gap-2 w-60"
+            >
+              <Plus size={18} color={isDark ? "#F1F5F9" : "#1E293B"} />
+              <Text className="text-muted-foreground">Create Table</Text>
+            </Button>
+            <View className="mb-7 h-20" />
           </View>
         </ScrollView>
       </View>
@@ -164,4 +149,4 @@ const CollectionList = React.memo(
   },
 );
 
-export default CollectionList;
+export default TableList;

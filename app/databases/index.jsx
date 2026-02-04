@@ -5,7 +5,6 @@ import {
   Animated,
   Dimensions,
   TouchableOpacity,
-  StyleSheet,
   Easing,
   InteractionManager,
   ActivityIndicator,
@@ -16,7 +15,7 @@ import { useTheme } from "../../lib/theme-context";
 import { useProjectStore } from "../../appwrite/store/projectStore";
 import useDatabaseStore from "../../appwrite/data-services/databaseService";
 import DatabaseSidebar from "../../components/databases/DatabaseSidebar";
-import CollectionList from "../../components/databases/CollectionList";
+import TableList from "../../components/databases/TableList";
 import TablesRoot from "../../components/TablesScreens/root";
 import { StatusBar } from "expo-status-bar";
 import { OrganizationPicker } from "../../components/Organization/OrgPicker";
@@ -34,7 +33,6 @@ const DatabaseLayout = () => {
   const projects = useProjectStore((state) => state.projects);
   const currentProject = useProjectStore((state) => state.currentProject);
   const setCurrentProject = useProjectStore((state) => state.setCurrentProject);
-  const fetchProjects = useProjectStore((state) => state.fetchProjects);
 
   const organizations = useOrganizationStore((state) => state.organizations);
   const currentOrganization = useOrganizationStore(
@@ -46,12 +44,13 @@ const DatabaseLayout = () => {
 
   const databases = useDatabaseStore((state) => state.databases);
   const fetchDatabases = useDatabaseStore((state) => state.fetchDatabases);
-  const collections = useDatabaseStore((state) => state.collections);
-  const fetchCollections = useDatabaseStore((state) => state.fetchCollections);
+  const tables = useDatabaseStore((state) => state.tables);
+  const fetchTables = useDatabaseStore((state) => state.fetchTables);
   const loading = useDatabaseStore((state) => state.loading);
+  const databaseProjectId = useDatabaseStore((state) => state.currentProjectId);
 
   const [activeDatabaseId, setActiveDatabaseId] = useState(initialDatabaseId);
-  const [activeCollectionId, setActiveCollectionId] = useState(null);
+  const [activeTableId, setActiveTableId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
@@ -60,6 +59,11 @@ const DatabaseLayout = () => {
 
   // Combined value for transformation
   const translateX = sidebarX;
+
+  useEffect(() => {
+    setActiveDatabaseId(null);
+    setActiveTableId(null);
+  }, [currentProject?.$id]);
 
   useEffect(() => {
     if (!activeDatabaseId && databases.length > 0) {
@@ -74,18 +78,23 @@ const DatabaseLayout = () => {
   }, [currentProject?.$id]);
 
   useEffect(() => {
-    if (activeDatabaseId && currentProject?.$id) {
-      fetchCollections(
+    if (
+      activeDatabaseId &&
+      currentProject?.$id &&
+      databaseProjectId === currentProject.$id &&
+      databases.some((db) => db.$id === activeDatabaseId)
+    ) {
+      fetchTables(
         currentProject.$id,
         currentProject.region || "fra",
         activeDatabaseId,
       );
     }
-  }, [activeDatabaseId, currentProject?.$id]);
+  }, [activeDatabaseId, currentProject?.$id, databaseProjectId, databases]);
 
   const openTableScreens = useCallback(
-    (collectionId) => {
-      setActiveCollectionId(collectionId);
+    (tableId) => {
+      setActiveTableId(tableId);
       setIsReady(false);
       Animated.timing(sidebarX, {
         toValue: 0,
@@ -116,7 +125,7 @@ const DatabaseLayout = () => {
   const handleDatabaseChange = useCallback(
     (dbId) => {
       setActiveDatabaseId(dbId);
-      setActiveCollectionId(null);
+      setActiveTableId(null);
       if (isSidebarOpen) {
         closeTableScreens();
       }
@@ -128,13 +137,13 @@ const DatabaseLayout = () => {
     () => databases.find((db) => db.$id === activeDatabaseId),
     [databases, activeDatabaseId],
   );
-  const activeCollections = useMemo(
-    () => (activeDatabaseId ? collections[activeDatabaseId] || [] : []),
-    [collections, activeDatabaseId],
+  const activeTables = useMemo(
+    () => (activeDatabaseId ? tables[activeDatabaseId] || [] : []),
+    [tables, activeDatabaseId],
   );
-  const activeCollection = useMemo(
-    () => activeCollections.find((c) => c.$id === activeCollectionId),
-    [activeCollections, activeCollectionId],
+  const activeTable = useMemo(
+    () => activeTables.find((t) => t.$id === activeTableId),
+    [activeTables, activeTableId],
   );
 
   return (
@@ -178,11 +187,11 @@ const DatabaseLayout = () => {
               onDatabaseChange={handleDatabaseChange}
             />
 
-            {/* Level 2: Collection List */}
-            <CollectionList
-              collections={activeCollections}
-              activeCollectionId={activeCollectionId}
-              onCollectionChange={openTableScreens}
+            {/* Level 2: Table List */}
+            <TableList
+              tables={activeTables}
+              activeTableId={activeTableId}
+              onTableChange={openTableScreens}
               databaseName={activeDatabase?.name}
               databaseId={activeDatabaseId}
             />
@@ -217,17 +226,17 @@ const DatabaseLayout = () => {
                   />
                 </TouchableOpacity>
                 <Text className="text-foreground text-xl font-regular">
-                  {activeCollection?.name || "Collection"}
+                  {activeTable?.name || "Table"}
                 </Text>
               </View>
 
               <View className="flex-1">
-                {activeCollection && isReady ? (
+                {activeTable && isReady ? (
                   <TablesRoot
                     databaseId={activeDatabaseId}
-                    collectionId={activeCollectionId}
+                    tableId={activeTableId}
                   />
-                ) : activeCollection ? (
+                ) : activeTable ? (
                   <View className="flex-1 items-center justify-center">
                     <ActivityIndicator size="large" color="#3B82F6" />
                     <Text className="text-muted-foreground mt-2">

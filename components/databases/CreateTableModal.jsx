@@ -8,7 +8,7 @@ import { useTheme } from '../../lib/theme-context';
 import { cn } from '../../lib/utils';
 import { X } from 'lucide-react-native';
 
-const CreateCollectionModal = ({ isOpen, onOpenChange, onCreate, databaseId }) => {
+const CreateTableModal = ({ isOpen, onOpenChange, onCreate, databaseId }) => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
     
@@ -83,7 +83,7 @@ const CreateCollectionModal = ({ isOpen, onOpenChange, onCreate, databaseId }) =
                 >
                     {/* Header */}
                     <View className="px-6 py-5 flex-row items-center justify-between border-b border-border/50">
-                        <Text className="text-xl font-bold tracking-tight">Create Collection</Text>
+                        <Text className="text-xl font-bold tracking-tight">Create Table</Text>
                         <TouchableOpacity 
                             onPress={() => onOpenChange(false)}
                             className="p-2 rounded-full"
@@ -95,9 +95,9 @@ const CreateCollectionModal = ({ isOpen, onOpenChange, onCreate, databaseId }) =
                     <ScrollView className="px-6 py-6">
                         <View className="gap-6">
                             <View className="gap-2.5">
-                                <Label nativeID="collection-name">Name</Label>
+                                <Label nativeID="table-name">Name</Label>
                                 <Input
-                                    placeholder="Enter collection name"
+                                    placeholder="Enter table name"
                                     value={name}
                                     onChangeText={setName}
                                     autoFocus
@@ -106,11 +106,11 @@ const CreateCollectionModal = ({ isOpen, onOpenChange, onCreate, databaseId }) =
 
                             <View className="gap-2.5">
                                 <View className="flex-row items-center justify-between">
-                                    <Label nativeID="collection-id">Collection ID</Label>
+                                    <Label nativeID="table-id">Table ID</Label>
                                     
                                 </View>
                                 <Input
-                                    placeholder="Enter collection ID (optional)"
+                                    placeholder="Enter table ID (optional)"
                                     value={id}
                                     className='text-muted-foreground'
                                     onChangeText={(val) => {
@@ -159,4 +159,4 @@ const CreateCollectionModal = ({ isOpen, onOpenChange, onCreate, databaseId }) =
     );
 };
 
-export default CreateCollectionModal;
+export default CreateTableModal;

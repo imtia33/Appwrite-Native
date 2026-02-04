@@ -47,14 +47,12 @@ const ROLES = [
 
 const ACTIONS = ["create", "read", "update", "delete"];
 
-const Permissions = ({ databaseId, collectionId }) => {
+const Permissions = ({ databaseId, tableId }) => {
   const { currentProject } = useProjectStore();
-  const { collections, fetchCollections } = useDatabaseStore();
+  const { tables, fetchTables } = useDatabaseStore();
 
-  // Get collection from store
-  const collection = collections[databaseId]?.find(
-    (c) => c.$id === collectionId,
-  );
+  // Get table from store
+  const table = tables[databaseId]?.find((t) => t.$id === tableId);
 
   const [permissions, setPermissions] = useState([]);
   const [initialPermissions, setInitialPermissions] = useState([]);
@@ -71,10 +69,10 @@ const Permissions = ({ databaseId, collectionId }) => {
   const [selectedTeamIds, setSelectedTeamIds] = useState([]);
   const [visibleGroups, setVisibleGroups] = useState([]);
 
-  // Load collection data
+  // Load table data
   useEffect(() => {
-    if (collection) {
-      const perms = collection.$permissions || [];
+    if (table) {
+      const perms = table.$permissions || [];
       setPermissions(perms);
       setInitialPermissions(perms);
 
@@ -100,7 +98,7 @@ const Permissions = ({ databaseId, collectionId }) => {
 
       setIsLoading(false);
     }
-  }, [collection]);
+  }, [table]);
 
   // Group permissions by role
   const groupedPermissions = useMemo(() => {
@@ -147,7 +145,7 @@ const Permissions = ({ databaseId, collectionId }) => {
   }, [permissions, initialPermissions]);
 
   const handleSave = async () => {
-    if (!currentProject || !collection) return;
+    if (!currentProject || !table) return;
 
     setIsSaving(true);
     try {
@@ -156,19 +154,19 @@ const Permissions = ({ databaseId, collectionId }) => {
         currentProject.$id,
       );
 
-      await projectSdk.databases.updateCollection(
+      await projectSdk.tablesDB.updateTable({
         databaseId,
-        collectionId,
-        collection.name || "",
+        tableId,
+        name: table.name || "",
         permissions,
-        collection.documentSecurity || false,
-        collection.enabled !== false,
-      );
+        documentSecurity: table.documentSecurity || false,
+        enabled: table.enabled !== false,
+      });
 
       setInitialPermissions([...permissions]);
 
-      // Refresh collections in store
-      await fetchCollections(
+      // Refresh tables in store
+      await fetchTables(
         currentProject.$id,
         currentProject.region || "fra",
         databaseId,

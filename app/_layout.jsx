@@ -105,6 +105,13 @@ function RootStack() {
             animation: "slide_from_right",
           }}
         />
+        <Stack.Screen
+          name="settings"
+          options={{
+            headerShown: false,
+            animation: "fade",
+          }}
+        />
         
       </Stack>
       <PortalHost />

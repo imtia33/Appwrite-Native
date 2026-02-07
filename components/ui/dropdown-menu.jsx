@@ -1,256 +1,320 @@
-import { Icon } from './icon';
-import { NativeOnlyAnimatedView } from './native-only-animated-view';
-import { TextClassContext } from './text';
-import { cn } from '../../lib/utils';
-import * as DropdownMenuPrimitive from '@rn-primitives/dropdown-menu';
-import { Check, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react-native';
-import * as React from 'react';
+import * as React from "react";
 import {
-  Platform,
-  StyleSheet,
-  Text,
   View,
-} from 'react-native';
-import { FadeIn } from 'react-native-reanimated';
-import { FullWindowOverlay as RNFullWindowOverlay } from 'react-native-screens';
+  Text,
+  Pressable,
+  StyleSheet,
+  Platform,
+  Modal,
+  Dimensions,
+} from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { Check, ChevronRight } from "lucide-react-native";
+import { cn } from "../../lib/utils";
+import { Icon } from "./icon";
+import { TextClassContext } from "./text";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+const DropdownMenuContext = React.createContext(null);
 
-const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
+function DropdownMenu({ children }) {
+  const [open, setOpen] = React.useState(false);
+  const [triggerLayout, setTriggerLayout] = React.useState({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
+  const triggerRef = React.useRef(null);
 
-const DropdownMenuGroup = DropdownMenuPrimitive.Group;
-
-const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
-
-const DropdownMenuSub = DropdownMenuPrimitive.Sub;
-
-const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
-
-function DropdownMenuSubTrigger({
-  className,
-  inset,
-  children,
-  iconClassName,
-  ...props
-}) {
-  const { open } = DropdownMenuPrimitive.useSubContext();
-  const icon = Platform.OS === 'web' ? ChevronRight : open ? ChevronUp : ChevronDown;
   return (
-    <TextClassContext.Provider
-      value={cn(
-        'text-sm select-none group-active:text-accent-foreground',
-        open && 'text-accent-foreground'
-      )}>
-      <DropdownMenuPrimitive.SubTrigger
-        className={cn(
-          'active:bg-accent group flex flex-row items-center rounded-sm px-2 py-2 sm:py-1.5',
-          Platform.select({
-            web: 'focus:bg-accent focus:text-accent-foreground cursor-default outline-none [&_svg]:pointer-events-none',
-          }),
-          open && 'bg-accent',
-          inset && 'pl-8'
-        )}
-        {...props}>
-        <>{children}</>
-        <Icon as={icon} size={16} color='grey' />
-      </DropdownMenuPrimitive.SubTrigger>
-    </TextClassContext.Provider>
+    <DropdownMenuContext.Provider
+      value={{ open, setOpen, triggerLayout, setTriggerLayout, triggerRef }}
+    >
+      {children}
+    </DropdownMenuContext.Provider>
   );
 }
 
-function DropdownMenuSubContent({
-  className,
-  ...props
-}) {
+function DropdownMenuTrigger({ children, className, ...props }) {
+  const { open, setOpen, triggerRef, setTriggerLayout } =
+    React.useContext(DropdownMenuContext);
+
+  const handlePress = () => {
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setTriggerLayout({ x, y, width, height });
+      setOpen(!open);
+    });
+  };
+
   return (
-    <NativeOnlyAnimatedView entering={FadeIn}>
-      <DropdownMenuPrimitive.SubContent
-        className={cn(
-          'bg-popover border-border overflow-hidden rounded-md border p-1 shadow-lg shadow-black/5',
-          Platform.select({
-            web: 'animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 fade-in-0 data-[state=closed]:zoom-out-95 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-context-menu-content-transform-origin) z-50 min-w-[8rem]',
-          }),
-          className
-        )}
-        {...props}
-      />
-    </NativeOnlyAnimatedView>
+    <Pressable
+      ref={triggerRef}
+      onPress={handlePress}
+      className={cn(className)}
+      {...props}
+    >
+      <View pointerEvents="none">{children}</View>
+    </Pressable>
   );
 }
-
-const FullWindowOverlay = Platform.OS === 'ios' ? RNFullWindowOverlay : React.Fragment;
 
 function DropdownMenuContent({
+  children,
   className,
-  overlayClassName,
-  overlayStyle,
-  portalHost,
+  sideOffset = 4,
   ...props
 }) {
+  const { open, setOpen, triggerLayout } =
+    React.useContext(DropdownMenuContext);
+  const [contentLayout, setContentLayout] = React.useState({
+    width: 0,
+    height: 0,
+  });
+
+  if (!open) return null;
+
+  const onContentLayout = (event) => {
+    const { width, height } = event.nativeEvent.layout;
+    if (width > 0) setContentLayout({ width, height });
+  };
+
+  const menuWidth = contentLayout.width || 128; // min-w-[8rem] is 128px
+  const screenWidth = Dimensions.get("window").width;
+
+  let left = triggerLayout.x;
+  // If it goes off screen right, align to right of trigger
+  if (left + menuWidth > screenWidth - 8) {
+    left = triggerLayout.x + triggerLayout.width - menuWidth;
+  }
+  // Hard clamp
+  left = Math.max(8, Math.min(left, screenWidth - menuWidth - 8));
+
+  const contentStyle = {
+    top: triggerLayout.y + triggerLayout.height + sideOffset,
+    left: left,
+  };
+
   return (
-    <DropdownMenuPrimitive.Portal hostName={portalHost}>
-      <FullWindowOverlay>
-        <DropdownMenuPrimitive.Overlay
-          style={Platform.select({
-            web: overlayStyle ?? undefined,
-            native: [
-              StyleSheet.absoluteFill,
-              { zIndex: 1000, elevation: 1000 },
-              overlayStyle,
-            ],
-          })}
-          className={overlayClassName}>
-          <NativeOnlyAnimatedView className="z-[1000]" entering={FadeIn}>
-            <TextClassContext.Provider value="text-popover-foreground">
-              <DropdownMenuPrimitive.Content
-                className={cn(
-                  'bg-popover border-border min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg shadow-black/5',
-                  Platform.select({
-                    web: cn(
-                      'animate-in fade-in-0 zoom-in-95 max-h-(--radix-context-menu-content-available-height) origin-(--radix-context-menu-content-transform-origin) z-[1000] cursor-default',
-                      props.side === 'bottom' && 'slide-in-from-top-2',
-                      props.side === 'top' && 'slide-in-from-bottom-2'
-                    ),
-                  }),
-                  className
-                )}
-                {...props}
-              />
-            </TextClassContext.Provider>
-          </NativeOnlyAnimatedView>
-        </DropdownMenuPrimitive.Overlay>
-      </FullWindowOverlay>
-    </DropdownMenuPrimitive.Portal>
+    <Modal
+      transparent
+      visible={open}
+      animationType="none"
+      onRequestClose={() => setOpen(false)}
+    >
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={() => setOpen(false)}
+        className="bg-black/5"
+      />
+      <View
+        style={[contentStyle, { position: "absolute" }]}
+        className="z-50"
+        onLayout={onContentLayout}
+      >
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(150)}
+          className={cn(
+            "bg-popover border-border min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-xl shadow-black/30",
+            className,
+          )}
+        >
+          <TextClassContext.Provider value="text-popover-foreground">
+            {children}
+          </TextClassContext.Provider>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }
 
 function DropdownMenuItem({
+  children,
   className,
-  inset,
   variant,
+  inset,
+  onPress,
+  closeOnSelect = true,
   ...props
 }) {
+  const { setOpen } = React.useContext(DropdownMenuContext);
+
   return (
-    <TextClassContext.Provider
-      value={cn(
-        'select-none text-sm text-popover-foreground group-active:text-popover-foreground',
-        variant === 'destructive' && 'text-destructive group-active:text-destructive'
-      )}>
-      <DropdownMenuPrimitive.Item
-        className={cn(
-          'active:bg-accent group relative flex flex-row items-center gap-2 rounded-sm px-2 py-2 sm:py-1.5',
-          Platform.select({
-            web: cn(
-              'focus:bg-accent focus:text-accent-foreground cursor-default outline-none data-[disabled]:pointer-events-none',
-              variant === 'destructive' && 'focus:bg-destructive/10 dark:focus:bg-destructive/20'
-            ),
-          }),
-          variant === 'destructive' && 'active:bg-destructive/10 dark:active:bg-destructive/20',
-          props.disabled && 'opacity-50',
-          inset && 'pl-8',
-          className
+    <Pressable
+      onPress={(e) => {
+        onPress?.(e);
+        if (closeOnSelect) {
+          setOpen(false);
+        }
+      }}
+      className={cn(
+        "active:bg-accent group relative flex flex-row items-center gap-2 rounded-sm px-2 py-2 sm:py-1.5",
+        props.disabled && "opacity-50",
+        inset && "pl-8",
+        className,
+      )}
+      {...props}
+    >
+      <TextClassContext.Provider
+        value={cn(
+          "select-none text-sm text-popover-foreground",
+          variant === "destructive" && "text-destructive",
         )}
-        {...props}
-      />
-    </TextClassContext.Provider>
+      >
+        {children}
+      </TextClassContext.Provider>
+    </Pressable>
   );
 }
 
 function DropdownMenuCheckboxItem({
-  className,
   children,
+  className,
+  checked,
+  onCheckedChange,
+  closeOnSelect = true,
   ...props
 }) {
+  const { setOpen } = React.useContext(DropdownMenuContext);
+
   return (
-    <TextClassContext.Provider value="text-sm text-popover-foreground select-none group-active:text-accent-foreground">
-      <DropdownMenuPrimitive.CheckboxItem
-        className={cn(
-          'active:bg-accent group relative flex flex-row items-center gap-2 rounded-sm py-2 pl-8 pr-2 sm:py-1.5',
-          Platform.select({
-            web: 'focus:bg-accent focus:text-accent-foreground cursor-default outline-none data-[disabled]:pointer-events-none',
-          }),
-          props.disabled && 'opacity-50',
-          className
+    <Pressable
+      onPress={() => {
+        onCheckedChange?.(!checked);
+        if (closeOnSelect) {
+          setOpen(false);
+        }
+      }}
+      className={cn(
+        "active:bg-accent group relative flex flex-row items-center gap-2 rounded-sm py-2 pl-8 pr-2 sm:py-1.5",
+        props.disabled && "opacity-50",
+        className,
+      )}
+      {...props}
+    >
+      <View className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        {checked && (
+          <Icon as={Check} className="text-foreground size-4 shrink-0" />
         )}
-        {...props}>
-        <View className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          <DropdownMenuPrimitive.ItemIndicator>
-            <Icon
-              as={Check}
-              size={16} color='grey'
-            />
-          </DropdownMenuPrimitive.ItemIndicator>
-        </View>
-        <>{children}</>
-      </DropdownMenuPrimitive.CheckboxItem>
-    </TextClassContext.Provider>
+      </View>
+      <TextClassContext.Provider value="text-sm text-popover-foreground">
+        {children}
+      </TextClassContext.Provider>
+    </Pressable>
   );
 }
 
 function DropdownMenuRadioItem({
-  className,
   children,
+  className,
+  value,
+  onPress,
+  closeOnSelect = true,
   ...props
 }) {
+  const { setOpen } = React.useContext(DropdownMenuContext);
+  // Note: RadioGroup logic should ideally be handled by parent,
+  // but for simplicity we assume the caller handles value logic.
+
   return (
-    <TextClassContext.Provider value="text-sm text-popover-foreground select-none group-active:text-accent-foreground">
-      <DropdownMenuPrimitive.RadioItem
-        className={cn(
-          'active:bg-accent group relative flex flex-row items-center gap-2 rounded-sm py-2 pl-8 pr-2 sm:py-1.5',
-          Platform.select({
-            web: 'focus:bg-accent focus:text-accent-foreground cursor-default outline-none data-[disabled]:pointer-events-none',
-          }),
-          props.disabled && 'opacity-50',
-          className
-        )}
-        {...props}>
-        <View className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          <DropdownMenuPrimitive.ItemIndicator>
-            <View className="bg-foreground h-2 w-2 rounded-full" />
-          </DropdownMenuPrimitive.ItemIndicator>
-        </View>
-        <>{children}</>
-      </DropdownMenuPrimitive.RadioItem>
-    </TextClassContext.Provider>
+    <Pressable
+      onPress={(e) => {
+        onPress?.(e);
+        if (closeOnSelect) {
+          setOpen(false);
+        }
+      }}
+      className={cn(
+        "active:bg-accent group relative flex flex-row items-center gap-2 rounded-sm py-2 pl-8 pr-2 sm:py-1.5",
+        props.disabled && "opacity-50",
+        className,
+      )}
+      {...props}
+    >
+      <View className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        {/* Placeholder logic for radio indicator */}
+        <View className="bg-foreground h-2 w-2 rounded-full opacity-0" />
+      </View>
+      <TextClassContext.Provider value="text-sm text-popover-foreground">
+        {children}
+      </TextClassContext.Provider>
+    </Pressable>
   );
 }
 
-function DropdownMenuLabel({
-  className,
-  inset,
-  ...props
-}) {
+function DropdownMenuLabel({ children, className, inset, ...props }) {
   return (
-    <DropdownMenuPrimitive.Label
+    <Text
       className={cn(
-        'text-foreground px-2 py-2 text-sm font-medium sm:py-1.5',
-        inset && 'pl-8',
-        className
+        "text-foreground px-2 py-2 text-sm font-medium sm:py-1.5",
+        inset && "pl-8",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function DropdownMenuSeparator({ className, ...props }) {
+  return (
+    <View className={cn("bg-border -mx-1 my-1 h-px", className)} {...props} />
+  );
+}
+
+function DropdownMenuGroup({ children }) {
+  return <View>{children}</View>;
+}
+
+function DropdownMenuPortal({ children }) {
+  return <>{children}</>;
+}
+
+function DropdownMenuSub({ children }) {
+  return <View>{children}</View>;
+}
+
+function DropdownMenuRadioGroup({ children }) {
+  return <View>{children}</View>;
+}
+
+function DropdownMenuShortcut({ className, ...props }) {
+  return (
+    <Text
+      className={cn(
+        "text-muted-foreground ml-auto text-xs tracking-widest",
+        className,
       )}
       {...props}
     />
   );
 }
 
-function DropdownMenuSeparator({
-  className,
-  ...props
-}) {
+// SubTriggers and SubContent are complex for a simple Modal approach
+// because they require nested modals or dynamic portals.
+// For now, we'll keep them as placeholders or simple views.
+
+function DropdownMenuSubTrigger({ children, className, inset, ...props }) {
   return (
-    <DropdownMenuPrimitive.Separator
-      className={cn('bg-border -mx-1 my-1 h-px', className)}
-      {...props}
-    />
+    <View
+      className={cn(
+        "group flex flex-row items-center rounded-sm px-2 py-2 sm:py-1.5",
+        inset && "pl-8",
+        className,
+      )}
+    >
+      <Text className="text-sm text-popover-foreground">{children}</Text>
+      <Icon
+        as={ChevronRight}
+        className="text-foreground ml-auto size-4 shrink-0"
+      />
+    </View>
   );
 }
 
-function DropdownMenuShortcut({ className, ...props }) {
-  return (
-    <Text
-      className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)}
-      {...props}
-    />
-  );
+function DropdownMenuSubContent({ children, className, ...props }) {
+  return null; // Nested subs not supported in this simple refactor yet
 }
 
 export {

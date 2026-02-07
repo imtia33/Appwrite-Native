@@ -1,17 +1,17 @@
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import * as React from "react";
-import { Platform, View, Text } from "react-native";
+import { Platform, View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, usePathname } from "expo-router";
-import { LayoutDashboard } from "lucide-react-native";
+import { ChevronDown, LayoutDashboard } from "lucide-react-native";
+import { cn } from "@/lib/utils";
 
 export function OrganizationPicker({
   organizations,
@@ -34,58 +34,51 @@ export function OrganizationPicker({
   };
 
   return (
-    <Select
-      value={selectedOrganization?.$id}
-      onValueChange={(value) => {
-        const val =
-          typeof value === "object" ? value.value || value.$id : value;
-
-        if (val === "__org_overview__") {
-          router.replace("/Organization");
-          return;
-        }
-
-        const org = organizations.find((o) => o.$id === val);
-        if (org) {
-          setSelectedOrganization(org);
-        }
-      }}
-    >
-      <SelectTrigger
-        ref={ref}
-        className="w-auto border border-0 bg-transparent"
-      >
-        <SelectValue
-          className="font-medium text-foreground dark:text-white"
-          placeholder={selectedOrganization?.name || "Select Organization"}
-        />
-      </SelectTrigger>
-      <SelectContent insets={contentInsets} className="w-[180px]">
-        <SelectGroup>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="flex-row items-center gap-2 px-2 h-10"
+        >
+          <Text
+            className={cn(
+              "font-medium text-base",
+              selectedOrganization
+                ? "text-foreground dark:text-white"
+                : "text-muted-foreground",
+            )}
+          >
+            {selectedOrganization?.name || "Select Organization"}
+          </Text>
+          <Icon as={ChevronDown} size={14} color="gray" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent insets={contentInsets} className="w-[220px]">
+        <ScrollView className="max-h-[300px]">
           {!isInOrgLayout && (
-            <SelectItem
-              key="org-overview"
-              label="Org Overview"
-              value="__org_overview__"
+            <DropdownMenuItem
+              onPress={() => router.replace("/Organization")}
+              className="flex-row items-center gap-2"
             >
-              <View className="flex-row items-center gap-2">
-                <LayoutDashboard size={14} color="#969696" />
-                <Text className="text-foreground font-medium">
-                  Org Overview
-                </Text>
-              </View>
-            </SelectItem>
+              <Icon as={LayoutDashboard} size={14} color="gray" />
+              <Text className="text-foreground font-medium">Org Overview</Text>
+            </DropdownMenuItem>
           )}
-          <SelectLabel className="text-muted-foreground">
+
+          <Text className="text-muted-foreground text-xs font-semibold px-2 py-1.5 mt-1">
             Organizations
-          </SelectLabel>
+          </Text>
+
           {organizations.map((org) => (
-            <SelectItem key={org.$id} label={org.name} value={org.$id}>
-              {org.name}
-            </SelectItem>
+            <DropdownMenuItem
+              key={org.$id}
+              onPress={() => setSelectedOrganization(org)}
+            >
+              <Text className="text-muted-foreground">{org.name}</Text>
+            </DropdownMenuItem>
           ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+        </ScrollView>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

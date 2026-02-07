@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "../../ui/alert-dialog";
 
-const DangerZone = ({ databaseId, tableId }) => {
+const DangerZone = ({ databaseId, tableId, onDelete }) => {
   const { currentProject } = useProjectStore();
   const { tables, deleteTable } = useDatabaseStore();
   const router = useRouter();
@@ -30,6 +30,14 @@ const DangerZone = ({ databaseId, tableId }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Track if component is mounted to avoid state updates after deletion
+  const isMounted = React.useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (table) {
@@ -49,23 +57,24 @@ const DangerZone = ({ databaseId, tableId }) => {
         tableId,
       );
 
-      // Close dialog
-      setIsDialogOpen(false);
-
-      // Navigate back to database view
-      router.back();
+      // Successfully deleted, call the callback to close sidebar
+      if (onDelete) {
+        onDelete();
+      }
     } catch (err) {
       console.error("Error deleting table:", err);
-      // We could set an error state here to show in the dialog if we wanted
-    } finally {
-      setIsDeleting(false);
+      if (isMounted.current) {
+        setIsDeleting(false);
+      }
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !table) {
     return (
       <Card className="p-4 mb-4">
-        <Text className="text-muted-foreground">Loading...</Text>
+        <Text className="text-muted-foreground">
+          {!table ? "Table no longer exists" : "Loading..."}
+        </Text>
       </Card>
     );
   }
@@ -91,7 +100,7 @@ const DangerZone = ({ databaseId, tableId }) => {
             <Text className="text-white font-bold ml-2">Delete Table</Text>
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent className="w-[90%] max-w-[500px]">
+        <AlertDialogContent className="w-[90%] min-w-[350px]">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -110,7 +119,7 @@ const DangerZone = ({ databaseId, tableId }) => {
               style={{ borderColor: "#2e2e2eff" }}
               disabled={isDeleting}
             >
-              Cancel
+              <Text className="text-white font-bold">Cancel</Text>
             </AlertDialogCancel>
             <Button
               disabled={isDeleting}

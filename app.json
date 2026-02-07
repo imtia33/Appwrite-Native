@@ -3,7 +3,7 @@
     "name": "Appwrite",
     "slug": "appwrite",
     "scheme": [
-      "appwrite"
+      "appwrite-callback-console"
     ],
     "version": "1.0.0",
     "orientation": "portrait",

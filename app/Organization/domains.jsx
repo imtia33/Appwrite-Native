@@ -134,7 +134,7 @@ const Domains = () => {
       >
         {/* Header */}
         <View className="flex-row justify-between items-center mb-4">
-          <Text className="text-2xl font-bold">Domains</Text>
+          <Text className="text-2xl font-bold text-foreground">Domains</Text>
           <Button onPress={() => setShowAdd(true)} className="flex-row items-center gap-2">
             <Plus size={18} color="#fff" />
             <Text className="text-white">Add domain</Text>

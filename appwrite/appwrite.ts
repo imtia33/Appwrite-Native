@@ -10,6 +10,59 @@ if (typeof localStorage === "undefined") {
   };
 }
 
+const FilePolyfill = function (
+  this: any,
+  parts: any[],
+  name: string,
+  options?: any,
+) {
+  Object.defineProperty(this, "name", {
+    value: name,
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+  Object.defineProperty(this, "type", {
+    value: options?.type || "application/octet-stream",
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+  Object.defineProperty(this, "uri", {
+    value: "",
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+  Object.defineProperty(this, "size", {
+    value: 0,
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+
+  if (parts && parts[0]) {
+    if (typeof parts[0] === "string") {
+      this.uri = parts[0];
+    } else if (parts[0].uri) {
+      this.uri = parts[0].uri;
+      this.size = parts[0].size || 0;
+    }
+  }
+} as any;
+
+FilePolyfill.prototype.slice = function () {
+  return this;
+};
+
+// Force the polyfill even if File exists, but check if it's already ours
+if (
+  typeof File === "undefined" ||
+  (global.File as any)?.name !== "FilePolyfill"
+) {
+  global.File = FilePolyfill;
+}
+
 // import { isMultiRegionSupported, VARS } from '$lib/system';
 import {
   Account,

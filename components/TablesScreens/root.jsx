@@ -15,7 +15,7 @@ const TABS = [
   { route: "Settings", label: "Settings" },
 ];
 
-const Root = ({ databaseId, tableId }) => {
+const Root = ({ databaseId, tableId, onDelete }) => {
   const [activeTab, setActiveTab] = useState("Rows");
 
   const renderContent = () => {
@@ -29,7 +29,13 @@ const Root = ({ databaseId, tableId }) => {
       case "Activities":
         return <Activities databaseId={databaseId} tableId={tableId} />;
       case "Settings":
-        return <Settings databaseId={databaseId} tableId={tableId} />;
+        return (
+          <Settings
+            databaseId={databaseId}
+            tableId={tableId}
+            onDelete={onDelete}
+          />
+        );
       default:
         return null;
     }

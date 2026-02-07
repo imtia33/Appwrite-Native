@@ -1,23 +1,17 @@
 import { create } from "zustand";
 import { sdk } from "../appwrite";
 import { useProjectStore } from "../store/projectStore";
+import { useSettingsStore } from "../store/settingsStore";
 import { Query } from "@appwrite.io/console";
 
 interface DatabaseState {
   databases: any[];
   tables: Record<string, any[]>;
   backupPolicies: Record<string, any[]>;
-  documentCache: Record<
-    string,
-    {
-      items: any[];
-      hasMore: boolean;
-      loading: boolean;
-    }
-  >;
   loading: boolean;
   error: string | null;
   currentProjectId: string | null;
+  migrations: any[];
 }
 
 interface DatabaseActions {
@@ -28,7 +22,6 @@ interface DatabaseActions {
     databaseId: string,
     force?: boolean,
   ) => Promise<void>;
-  clearCache: () => void;
   getDatabases: (projectId: string) => any[];
   isLoading: () => boolean;
   getError: () => string | null;
@@ -65,6 +58,7 @@ interface DatabaseActions {
       isNextPage?: boolean;
       forceRefresh?: boolean;
       limit?: number;
+      cursorAfter?: string;
     },
   ) => Promise<any[]>;
   fetchColumns: (
@@ -160,6 +154,32 @@ interface DatabaseActions {
     tableId: string,
     key: string,
   ) => Promise<void>;
+  importCSV: (
+    projectId: string,
+    region: string,
+    databaseId: string,
+    tableId: string,
+    bucketId: string,
+    fileId: string,
+    internalFile?: boolean,
+  ) => Promise<any>;
+  exportCSV: (
+    projectId: string,
+    region: string,
+    databaseId: string,
+    tableId: string,
+    filename: string,
+    columns: string[],
+    queries?: any[],
+    delimiter?: string,
+    header?: boolean,
+  ) => Promise<any>;
+  fetchMigrations: (
+    projectId: string,
+    region: string,
+    queries?: any[],
+  ) => Promise<void>;
+  updateMigrationState: (migration: any) => void;
 }
 
 type DatabaseStore = DatabaseState & DatabaseActions;
@@ -168,10 +188,10 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
   databases: [],
   tables: {},
   backupPolicies: {},
-  documentCache: {},
   loading: false,
   error: null,
   currentProjectId: null,
+  migrations: [],
 
   fetchDatabases: async (projectId: string) => {
     const state = get();
@@ -225,7 +245,6 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
       databases: [],
       tables: {},
       backupPolicies: {},
-      documentCache: {},
       loading: false,
       error: null,
       currentProjectId: null,
@@ -363,37 +382,15 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
       isNextPage?: boolean;
       forceRefresh?: boolean;
       limit?: number;
+      cursorAfter?: string;
     } = {},
   ) => {
     const {
       queries = [],
       isNextPage = false,
-      forceRefresh = false,
       limit = 25,
+      cursorAfter,
     } = options;
-    const cacheKey = `${databaseId}:${tableId}`;
-    const state = get();
-    const currentCache = state.documentCache[cacheKey];
-
-    // If not force refresh and not next page, and we have data, return cached data
-    if (!forceRefresh && !isNextPage && currentCache?.items?.length > 0) {
-      return currentCache.items;
-    }
-
-    // If trying to fetch next page but we know there's no more, return current items
-    if (isNextPage && currentCache && !currentCache.hasMore) {
-      return currentCache.items;
-    }
-
-    set((state) => ({
-      documentCache: {
-        ...state.documentCache,
-        [cacheKey]: {
-          ...(state.documentCache[cacheKey] || { items: [], hasMore: true }),
-          loading: !isNextPage, // Only set global loading if not fetching more
-        },
-      },
-    }));
 
     try {
       const finalQueries = [...queries];
@@ -411,9 +408,8 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
       }
 
       // Cursor for next page
-      if (isNextPage && currentCache?.items?.length > 0) {
-        const lastItem = currentCache.items[currentCache.items.length - 1];
-        finalQueries.push(Query.cursorAfter(lastItem.$id));
+      if (isNextPage && cursorAfter) {
+        finalQueries.push(Query.cursorAfter(cursorAfter));
       }
 
       const response = await (
@@ -423,42 +419,10 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
         tableId,
         queries: finalQueries,
       });
-      const newDocs = response.rows;
 
-      // Smart hasMore detection
-      const hasMore = newDocs.length === limit;
-
-      set((state) => {
-        const existingItems = state.documentCache[cacheKey]?.items || [];
-        const updatedItems =
-          isNextPage && !forceRefresh
-            ? [...existingItems, ...newDocs]
-            : newDocs;
-
-        return {
-          documentCache: {
-            ...state.documentCache,
-            [cacheKey]: {
-              items: updatedItems,
-              hasMore,
-              loading: false,
-            },
-          },
-        };
-      });
-
-      return isNextPage ? get().documentCache[cacheKey]?.items || [] : newDocs;
+      return response.rows;
     } catch (error: any) {
       console.error("Error fetching rows:", error);
-      set((state) => ({
-        documentCache: {
-          ...state.documentCache,
-          [cacheKey]: {
-            ...(state.documentCache[cacheKey] || { items: [], hasMore: true }),
-            loading: false,
-          },
-        },
-      }));
       throw error;
     }
   },
@@ -823,6 +787,91 @@ const useDatabaseStore = create<DatabaseStore>((set, get) => ({
       console.error("Error deleting index:", error);
       throw error;
     }
+  },
+
+  importCSV: async (
+    projectId: string,
+    region: string,
+    databaseId: string,
+    tableId: string,
+    bucketId: string,
+    fileId: string,
+    internalFile: boolean = false,
+  ) => {
+    try {
+      const response = await sdk
+        .forProject(region, projectId)
+        .migrations.createCSVImport({
+          bucketId,
+          fileId,
+          resourceId: `${databaseId}:${tableId}`,
+          internalFile,
+        });
+      return response;
+    } catch (error: any) {
+      console.error("Error importing CSV:", error);
+      throw error;
+    }
+  },
+
+  exportCSV: async (
+    projectId: string,
+    region: string,
+    databaseId: string,
+    tableId: string,
+    filename: string,
+    columns: string[],
+    queries: any[] = [],
+    delimiter: string = ",",
+    header: boolean = true,
+  ) => {
+    try {
+      const response = await sdk
+        .forProject(region, projectId)
+        .migrations.createCSVExport({
+          resourceId: `${databaseId}:${tableId}`,
+          filename,
+          columns,
+          queries,
+          delimiter,
+          header,
+          notify: true,
+        });
+      return response;
+    } catch (error: any) {
+      console.error("Error exporting CSV:", error);
+      throw error;
+    }
+  },
+
+  fetchMigrations: async (
+    projectId: string,
+    region: string,
+    queries: any[] = [],
+  ) => {
+    try {
+      const response = await sdk
+        .forProject(region, projectId)
+        .migrations.list({ queries });
+      set({ migrations: response.migrations });
+    } catch (error: any) {
+      console.error("Error fetching migrations:", error);
+    }
+  },
+
+  updateMigrationState: (migration: any) => {
+    set((state) => {
+      const existingIndex = state.migrations.findIndex(
+        (m) => m.$id === migration.$id,
+      );
+      if (existingIndex > -1) {
+        const updatedMigrations = [...state.migrations];
+        updatedMigrations[existingIndex] = migration;
+        return { migrations: updatedMigrations };
+      } else {
+        return { migrations: [migration, ...state.migrations] };
+      }
+    });
   },
 }));
 

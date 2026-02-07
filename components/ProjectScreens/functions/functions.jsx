@@ -27,6 +27,7 @@ import {
 } from "../../../constants/icons";
 import { useTheme } from "../../../lib/theme-context";
 import * as Clipboard from "expo-clipboard";
+import CreateFunctions from "./modals/createFunctions";
 
 const formatDate = (dateString, type = "full") => {
   const date = new Date(dateString);
@@ -72,16 +73,27 @@ const Functions = () => {
     ToastAndroid.show("Copied to clipboard", ToastAndroid.SHORT);
   };
 
-  const handleCreateFunction = async (name, runtime, functionId) => {
+  const handleCreateFunction = async (name, runtime, functionId, template) => {
     setIsProcessing(true);
     try {
-      await createFunction(
-        currentProject.$id,
-        currentProject.region || "fra",
-        name,
-        runtime,
-        functionId,
-      );
+      if (template) {
+        await createFunctionFromTemplate(
+          currentProject.$id,
+          currentProject.region || "fra",
+          template,
+          name,
+          runtime,
+          functionId,
+        );
+      } else {
+        await createFunction(
+          currentProject.$id,
+          currentProject.region || "fra",
+          name,
+          runtime,
+          functionId,
+        );
+      }
       ToastAndroid.show("Function created successfully", ToastAndroid.SHORT);
       setCreateModalOpen(false);
     } catch (err) {
@@ -261,12 +273,7 @@ const Functions = () => {
 
       <View className="flex-row gap-2 mb-4">
         <TouchableOpacity
-          onPress={() =>
-            ToastAndroid.show(
-              "Function creation coming soon",
-              ToastAndroid.SHORT,
-            )
-          }
+          onPress={() => setCreateModalOpen(true)}
           className="bg-primary px-4 py-2 rounded-lg flex-row items-center"
         >
           <Icon as={Plus} size={18} color="white" />
@@ -306,12 +313,7 @@ const Functions = () => {
             Create your first serverless function to get started
           </Text>
           <TouchableOpacity
-            onPress={() =>
-              ToastAndroid.show(
-                "Function creation coming soon",
-                ToastAndroid.SHORT,
-              )
-            }
+            onPress={() => setCreateModalOpen(true)}
             className="bg-primary px-6 py-3 rounded-lg flex-row items-center"
           >
             <Icon as={Plus} size={20} color="white" />
@@ -334,6 +336,12 @@ const Functions = () => {
           onDeleteSelected={handleDeleteSelected}
         />
       )}
+
+      <CreateFunctions
+        visible={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreate={handleCreateFunction}
+      />
     </View>
   );
 };

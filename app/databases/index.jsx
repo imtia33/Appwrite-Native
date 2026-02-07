@@ -92,6 +92,11 @@ const DatabaseLayout = () => {
     }
   }, [activeDatabaseId, currentProject?.$id, databaseProjectId, databases]);
 
+  const handleDeleteSuccess = useCallback(() => {
+    setActiveTableId(null);
+    closeTableScreens();
+  }, [closeTableScreens]);
+
   const openTableScreens = useCallback(
     (tableId) => {
       setActiveTableId(tableId);
@@ -235,6 +240,7 @@ const DatabaseLayout = () => {
                   <TablesRoot
                     databaseId={activeDatabaseId}
                     tableId={activeTableId}
+                    onDelete={handleDeleteSuccess}
                   />
                 ) : activeTable ? (
                   <View className="flex-1 items-center justify-center">

@@ -291,6 +291,7 @@ const DataTable = memo(
                           key={id}
                           checked={visibleColumns.includes(id)}
                           onCheckedChange={() => toggleColumn(id)}
+                          closeOnSelect={false}
                         >
                           <Text className="capitalize text-muted-foreground">
                             {column.header || id}

@@ -11,19 +11,12 @@ This document outlines the comprehensive feature set planned for the Appwrite Na
 
 ## 2. Dashboard & Monitoring (Native Exclusive)
 
-- [ ] **System Health Pulse** (Self-Hosted Only):
-  - **Connection Status**: Real-time Green/Red indicators for internal services (Database, Cache, In-Memory Storage).
-  - **Worker Health**: Monitor Queue Depths (Functions, Webhooks, etc.) to detect stuck consumers.
-  - **Background Task** (Self-Hosted Only):
-    - _Technical Implementation_: Uses `expo-background-fetch` to wake the app periodically.
-    - _Detection_: Performs a silent `health.get*` query using the saved Admin Session.
-    - _Alerting_: Triggers an `expo-notifications` local push if any health indicator returns non-200.
-- [ ] **Project Usage Analytics** (Cloud & Self-Hosted):
-  - [x] Interactive touch-charts for Bandwidth, Requests, and Storage execution.
-  - Resource Limit tracking (CPU/RAM).(self-hosted only)
-- [ ] **Real-time Alerts** (Self-Hosted Only):
-  - Local notifications for service health degradation.
-  - Alerts for high queue depths or failed jobs chunks.
+- [ ] **Project Performance Sentinel**:
+  - Native touch-charts for high-throughput metrics (Real-time requests/sec).
+- [ ] **Project Cloner (🚀 Power Utility)**:
+  - _Why Native?_: Orchesrating cross-project migrations is a high-cognitive-load task. This simplifies it to a one-click "Template" workflow.
+  - **Full Spec Clone**: Replicate Databases, Buckets, and Users into a new project instance (via `Migrations` service).
+  - **Environment Sync**: Quickly clone a Staging project to Production from your phone.
 
 ## 3. Databases
 
@@ -32,9 +25,8 @@ This document outlines the comprehensive feature set planned for the Appwrite Na
   - CRUD (Create, Read, Update, Delete) Documents.
   - Advanced Filtering & Search (Query builder).
   - JSON Attribute Editor.
-- [ ] **Schema Management**:
-  - View/Add/Edit Attributes (String, Integer, Boolean, etc.).
-  - View/Add/Delete Indexes.
+- [ ] **Schema Utilities**:
+  - View/Add/Edit Attributes & Indexes.
 - [ ] **Usage Stats**: Collection-specific usage metrics.
 
 ## 4. Storage
@@ -60,11 +52,9 @@ This document outlines the comprehensive feature set planned for the Appwrite Na
 
 ## 6. Messaging
 
-- [ ] **Overview**: List all messages and their delivery status.
-- [ ] **Provider Management**: View configured providers (APNS, FCM, Mailgun, Twilio, etc.).
-- [ ] **Test Bench**:
-  - Send test Push Notifications to _current device_ for verification.
-  - Trigger test Emails/SMS.
+- [ ] **Migration & Recovery**:
+  - Monitor status and **Retry** failed migrations.
+- [ ] **Provider Management**: View configured providers (APNS, FCM, Mailgun, etc.).
 - [ ] **Topics**: Manage messaging topics and subscribers.
 
 ## 7. Users & Teams
@@ -78,9 +68,9 @@ This document outlines the comprehensive feature set planned for the Appwrite Na
 
 ## 8. Git & Deployments (VCS)
 
-- [ ] **Repo Connectivity**: List connected repositories (GitHub, GitLab, etc.).
-- [ ] **Deployment Limits**: View/Manage deployment retention.
-- [ ] **Build Logs**: Monitor build progress in real-time.
+- [ ] **API Key "Kill Switch"**:
+  - Instantly revoke/delete organization-level API keys if a leak is detected (via `deleteKey`).
+- [ ] **Build Monitor**: Tracking of function build progress and logs.
 - [ ] **Manual Deployment**: Trigger deployment from a specific branch/commit.
 
 ## 9. Native Utilities
@@ -91,11 +81,12 @@ This document outlines the comprehensive feature set planned for the Appwrite Na
 
 ## 10. Remote Management (Self-Hosted Power User)
 
-- [ ] **SSH Integration**:
-  - _Technical Implementation_: Integrates a native SSH client (e.g., `react-native-ssh-client`).
-  - _Security_: Stores Host/Key credentials in the device's Hardware Keychain (Secure Enclave/Keystore).
-  - **Targeted Container Restart**: Maps Appwrite Service names to Docker container IDs (e.g., `appwrite-redis`) using SSH to execute surgical `docker restart` commands.
-  - **Remote Log Tailing**: Streams raw `docker logs --tail 100 -f` output directly to the app UI via SSH.
-- [ ] **Docker Sentinel**:
-  - View host-level container status (uptime, resource usage) directly from the host.
-  - "Emergency Reboot": Trigger a full system-level restart if the API is completely non-responsive.
+- [ ] **SSH "Emergency Tunnel" (🚀 Core Native Win)**:
+  - _Why Native?_: Browsers are sandboxed. SSH is the only way to fix a server when the API/SSL is down.
+  - **Out-of-Band Recovery**: Connect via host IP even if the Appwrite console is 502/Unavailable.
+  - **Surgical Restart**: Restart `appwrite-traefik` or `appwrite-worker` via raw Docker commands.
+- [ ] **Host Diagnostics Interface**:
+  - Cross-reference Appwrite API status with actual Docker container health.
+- [ ] **Raw Log Tailing**: Stream `docker logs` at native speeds (bypasses API rate limits).
+- [ ] **Background Health Sentinel**:
+  - Receive local push notifications if the **Host** becomes unreachable (detected via periodic pulse checks).

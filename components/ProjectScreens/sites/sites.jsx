@@ -30,6 +30,7 @@ import { Text } from "../../ui/text";
 import { Button } from "../../ui/button";
 import { sdk } from "../../../appwrite/appwrite";
 import { useRouter } from "expo-router";
+import ExpandableCard from "../../blocks/ExpandableCard";
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -133,8 +134,8 @@ const SiteScreenshot = ({ site }) => {
     return (
       <Image
         source={{ uri: imageUri }}
-        style={{ height: 175, borderRadius: 10 }}
-        resizeMode="contain"
+        style={{ height: 200, borderRadius: 10 }}
+        resizeMode="cover"
       />
     );
   }
@@ -142,6 +143,41 @@ const SiteScreenshot = ({ site }) => {
   return (
     <View className="w-full h-full items-center justify-center">
       <Icon as={Globe} size={48} className="text-muted-foreground/30" />
+    </View>
+  );
+};
+
+const FrameworkIcon = ({ framework, isDark }) => {
+  const icons = isDark ? darkIcons : lightIcons;
+  let FrameworkIconComponent = null;
+
+  const fw = framework ? framework.toLowerCase() : "";
+
+  if (icons[fw]) {
+    FrameworkIconComponent = icons[fw];
+  } else if (fw === "react-native") {
+    FrameworkIconComponent = icons["react"];
+  } else if (fw === "static") {
+    FrameworkIconComponent = icons["html5"];
+  }
+
+  const IconComponent =
+    FrameworkIconComponent?.default || FrameworkIconComponent;
+
+  return (
+    <View
+      style={{
+                        borderWidth: 1,
+                        borderStyle: "dashed",
+                        borderColor: "gray",
+                      }}
+                      className="absolute bottom-3 left-3 rounded-xl "
+    >
+      {IconComponent ? (
+        <IconComponent width={22} height={22} />
+      ) : (
+        <Icon as={Code} size={22} color="gray" />
+      )}
     </View>
   );
 };
@@ -223,13 +259,8 @@ const sites = () => {
     <View className="flex-1 bg-background">
       <View className="p-4 border-b border-border">
         <View className="flex-row justify-between items-center">
-          <View>
-            <Text variant="muted" className="text-muted-foreground">
-              Deploy and manage your web applications
-            </Text>
-          </View>
-        </View>
-        <Button
+          
+          <Button
           size="sm"
           variant="outline"
           className="flex-row items-center gap-2 bg-primary w-32 mt-2"
@@ -237,6 +268,8 @@ const sites = () => {
           <Icon as={Plus} size={16} color="white" />
           <Text className="text-white">Create</Text>
         </Button>
+        </View>
+        
       </View>
 
       {loading && allSites.length === 0 ? (
@@ -316,80 +349,80 @@ const sites = () => {
           }
           renderItem={({ item: site }) => {
             return (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() =>
+              <ExpandableCard
+                name={site.name}
+                tags={[site.framework || "static"]}
+                screenshot={
+                  <>
+                    <SiteScreenshot site={site} />
+                    <FrameworkIcon framework={site.framework} isDark={isDark} />
+                  </>
+                }
+                onScreenshotPress={() =>
                   router.push({
                     pathname: "/sites/overview",
                     params: { siteId: site.$id, name: site.name },
                   })
                 }
               >
-                <Card className="mb-3 overflow-hidden bg-card border-border shadow-lg">
-                  <View className="px-2 bg-muted/20 ">
-                    <SiteScreenshot site={site} />
-                    <View
-                      style={{
-                        borderWidth: 1,
-                        borderStyle: "dashed",
-                        borderColor: "gray",
-                      }}
-                      className="absolute bottom-3 left-3 rounded-xl "
+                <View className="flex-row flex-wrap gap-y-4">
+                  <View className="w-1/2">
+                    <Text
+                      variant="muted"
+                      className="text-xs uppercase font-bold text-muted-foreground"
                     >
-                      {(() => {
-                        const icons = isDark ? darkIcons : lightIcons;
-                        let FrameworkIcon = null;
-
-                        const framework = site.framework
-                          ? site.framework.toLowerCase()
-                          : "";
-
-                        if (icons[framework]) {
-                          FrameworkIcon = icons[framework];
-                        } else if (framework === "react-native") {
-                          FrameworkIcon = icons["react"];
-                        } else if (framework === "static") {
-                          FrameworkIcon = icons["html5"];
-                        } else {
-                        }
-
-                        const IconComponent =
-                          FrameworkIcon?.default || FrameworkIcon;
-
-                        if (IconComponent) {
-                          return <IconComponent width={22} height={22} />;
-                        }
-                        return <Icon as={Code} size={22} color="gray" />;
-                      })()}
-                    </View>
+                      Specification
+                    </Text>
+                    <Text className="text-foreground font-medium mt-1">
+                      {site.specification || "Standard"}
+                    </Text>
                   </View>
-
-                  <View className="flex-row justify-between items-start mb-1 px-4">
-                    <View className="flex-1">
-                      <Text
-                        variant="h4"
-                        className="text-xl font-bold text-foreground"
-                        numberOfLines={1}
-                      >
-                        {site.name}
-                      </Text>
-                      <Text
-                        variant="muted"
-                        className="text-muted-foreground mt-1"
-                      >
-                        {getDeploymentDesc(site)}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        /* Actions */
-                      }}
+                  <View className="w-1/2">
+                    <Text
+                      variant="muted"
+                      className="text-xs uppercase font-bold text-muted-foreground"
                     >
-                      <Icon as={MoreHorizontal} color="gray" size={24} />
-                    </TouchableOpacity>
+                      Build Runtime
+                    </Text>
+                    <Text className="text-foreground font-medium mt-1">
+                      {site.buildRuntime || "node-22"}
+                    </Text>
                   </View>
-                </Card>
-              </TouchableOpacity>
+                  <View className="w-1/2">
+                    <Text
+                      variant="muted"
+                      className="text-xs uppercase font-bold text-muted-foreground"
+                    >
+                      Branch
+                    </Text>
+                    <Text className="text-foreground font-medium mt-1">
+                      {site.providerBranch || "main"}
+                    </Text>
+                  </View>
+                  <View className="w-1/2">
+                    <Text
+                      variant="muted"
+                      className="text-xs uppercase font-bold text-muted-foreground"
+                    >
+                      Created At
+                    </Text>
+                    <Text className="text-foreground font-medium mt-1">
+                      {formatDate(site.$createdAt)}
+                    </Text>
+                  </View>
+                  <View className="w-full pt-2 border-t border-border">
+                    <Text
+                      variant="muted"
+                      className="text-xs uppercase font-bold text-muted-foreground"
+                    >
+                      Latest Deployment
+                    </Text>
+                    <Text className="text-foreground font-medium mt-1">
+                      {getDeploymentDesc(site)}
+                    </Text>
+                  </View>
+                </View>
+              </ExpandableCard>
             );
           }}
         />

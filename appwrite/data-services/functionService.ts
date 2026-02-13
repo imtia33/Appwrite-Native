@@ -191,8 +191,7 @@ const useFunctionStore = create<FunctionStore>((set, get) => ({
         "go-1.23",
         "php-8.3",
         "deno-2.0",
-      ];
-      // @ts-ignore - The SDK signature might be different than the types suggest
+      ] as any[];
       const response = await sdk
         .forProject(region, projectId)
         .functions.listTemplates(runtimesList, undefined, 100);

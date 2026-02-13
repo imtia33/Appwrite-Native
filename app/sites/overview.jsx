@@ -26,6 +26,8 @@ import {
   Loader2,
   Info,
   ChevronRight,
+  TrendingUp,
+  Layout,
 } from "lucide-react-native";
 import { Badge } from "@/components/ui/badge";
 import DataTable from "@/components/blocks/DataTable";
@@ -134,6 +136,7 @@ const Overview = ({ route }) => {
   const [site, setSite] = useState(null);
   const [deployments, setDeployments] = useState([]);
   const [domains, setDomains] = useState([]);
+  const [popularPages, setPopularPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -141,34 +144,64 @@ const Overview = ({ route }) => {
     try {
       if (!siteId || !currentProject) return;
 
-      const [siteData, deploymentsData, domainsData] = await Promise.all([
-        sdk
-          .forProject(currentProject.region, currentProject.$id)
-          .sites.get({ siteId }),
-        sdk
-          .forProject(currentProject.region, currentProject.$id)
-          .sites.listDeployments({
-            siteId,
-            queries: [Query.limit(5), Query.orderDesc("$createdAt")],
-          }),
-        sdk
-          .forProject(currentProject.region, currentProject.$id)
-          .proxy.listRules({
-            queries: [
-              Query.equal("type", RuleType.DEPLOYMENT),
-              Query.equal(
-                "deploymentResourceType",
-                DeploymentResourceType.SITE,
-              ),
-              Query.equal("deploymentResourceId", siteId),
-              Query.equal("trigger", RuleTrigger.MANUAL),
-            ],
-          }),
-      ]);
+      const [siteData, deploymentsData, domainsData, logsData] =
+        await Promise.all([
+          sdk
+            .forProject(currentProject.region, currentProject.$id)
+            .sites.get({ siteId }),
+          sdk
+            .forProject(currentProject.region, currentProject.$id)
+            .sites.listDeployments({
+              siteId,
+              queries: [Query.limit(5), Query.orderDesc("$createdAt")],
+            }),
+          sdk
+            .forProject(currentProject.region, currentProject.$id)
+            .proxy.listRules({
+              queries: [
+                Query.equal("type", RuleType.DEPLOYMENT),
+                Query.equal(
+                  "deploymentResourceType",
+                  DeploymentResourceType.SITE,
+                ),
+                Query.equal("deploymentResourceId", siteId),
+                Query.equal("trigger", RuleTrigger.MANUAL),
+              ],
+            }),
+          sdk
+            .forProject(currentProject.region, currentProject.$id)
+            .sites.listLogs({
+              siteId,
+              queries: [Query.limit(100), Query.orderDesc("$createdAt")],
+            }),
+        ]);
 
       setSite(siteData);
       setDeployments(deploymentsData.deployments);
       setDomains(domainsData.rules);
+
+      // Process logs for popular pages
+      const pathCounts = {};
+      logsData.executions.forEach((log) => {
+        const path = log.requestPath;
+        // Filter out static assets and internal Next.js paths
+        if (
+          !path.startsWith("/_next/static") &&
+          !path.startsWith("/_next/image") &&
+          !path.startsWith("/static") &&
+          !path.startsWith("/assets") &&
+          !path.match(/\.(js|css|map|ico|png|jpg|svg|json)$/)
+        ) {
+          pathCounts[path] = (pathCounts[path] || 0) + 1;
+        }
+      });
+
+      const sortedPages = Object.entries(pathCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([path, views]) => ({ path, views }));
+
+      setPopularPages(sortedPages);
     } catch (error) {
       console.error("Failed to fetch site overview data", error);
     } finally {
@@ -344,7 +377,7 @@ const Overview = ({ route }) => {
             <Separator className="bg-border" />
 
             <View className="p-4 flex-row justify-end gap-3 bg-muted/5">
-              <Button variant="secondary" size="sm" className="h-9 px-4" >
+              <Button variant="secondary" size="sm" className="h-9 px-4">
                 <Text className="text-sm font-medium">Instant rollback</Text>
               </Button>
               <Button
@@ -358,89 +391,158 @@ const Overview = ({ route }) => {
           </CardContent>
         </Card>
 
-        {/* Domains Card */}
-        <View className="flex-row items-center  gap-2">
-          <Text>Domains</Text>
-          <Globe size={18} color="gray" />
-        </View>
-        <Card>
-          
-          <CardContent>
-            {domains.length > 0 ? (
-              domains.map((domain, index) => (
-                <View
-                  key={index}
-                  className="flex-row items-center justify-between py-2 "
-                >
-                  <View className="flex-row items-center gap-2">
-                    <Globe size={14} color="gray" />
-                    <Text className="text-sm">{domain.domain}</Text>
+        {/* Popular Pages Card */}
+        <View className="gap-3">
+          <View className="flex-row items-center gap-2">
+            <Text className="text-lg font-bold">Popular Pages</Text>
+            <Icon as={TrendingUp} size={18} color="gray" />
+          </View>
+          <Card>
+            <CardContent className="p-0">
+              {popularPages.length > 0 ? (
+                popularPages.map((page, index) => (
+                  <View key={page.path}>
+                    <View className="flex-row items-center justify-between p-4">
+                      <View className="flex-row items-center gap-3 flex-1">
+                        <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
+                          <Text className="text-xs font-bold text-primary">
+                            {index + 1}
+                          </Text>
+                        </View>
+                        <View className="flex-1">
+                          <Text
+                            className="text-sm font-medium text-foreground"
+                            numberOfLines={1}
+                          >
+                            {page.path}
+                          </Text>
+                          <Text className="text-xs text-muted-foreground">
+                            {page.views} {page.views === 1 ? "visit" : "visits"}
+                          </Text>
+                        </View>
+                      </View>
+                      <View className="flex-row items-center gap-2">
+                        <Badge variant="secondary" className="px-2">
+                          <Text className="text-xs">
+                            {Math.round(
+                              (page.views /
+                                popularPages.reduce(
+                                  (acc, curr) => acc + curr.views,
+                                  0,
+                                )) *
+                                100,
+                            )}
+                            %
+                          </Text>
+                        </Badge>
+                      </View>
+                    </View>
+                    {index < popularPages.length - 1 && (
+                      <Separator className="bg-border" />
+                    )}
                   </View>
-                  <ChevronRight size={16} color="gray" />
+                ))
+              ) : (
+                <View className="p-8 items-center justify-center gap-2">
+                  <Icon
+                    as={Layout}
+                    size={32}
+                    className="text-muted-foreground/30"
+                  />
+                  <Text className="text-muted-foreground text-center">
+                    No traffic data available yet
+                  </Text>
                 </View>
-              ))
-            ) : (
-              <Text className="text-sm text-muted-foreground italic">
-                No domains configured
-              </Text>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </View>
+
+        {/* Domains Card */}
+        <View className="gap-3">
+          <View className="flex-row items-center gap-2">
+            <Text className="text-lg font-bold">Domains</Text>
+            <Icon as={Globe} size={18} color="gray" />
+          </View>
+
+          <Card>
+            <CardContent>
+              {domains.length > 0 ? (
+                domains.map((domain, index) => (
+                  <View
+                    key={index}
+                    className="flex-row items-center justify-between py-2 "
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <Globe size={14} color="gray" />
+                      <Text className="text-sm">{domain.domain}</Text>
+                    </View>
+                    <ChevronRight size={16} color="gray" />
+                  </View>
+                ))
+              ) : (
+                <Text className="text-sm text-muted-foreground italic">
+                  No domains configured
+                </Text>
+              )}
+            </CardContent>
+          </Card>
+        </View>
 
         {/* Recent Deployments */}
-        <View className="gap-4">
+        <View className="gap-3">
           <Text className="text-lg font-bold">Recent Deployments</Text>
           <View className="border border-border rounded-lg overflow-hidden">
-          <DataTable
-            data={deployments}
-            columns={[
-              {
-                id: "id",
-                header: "ID",
-                accessorKey: "$id",
-                width: 150,
-                cell: ({ row }) => (
-                  <Text className="text-xs font-mono" numberOfLines={1}>
-                    {row.original.$id}
-                  </Text>
-                ),
-              },
-              {
-                id: "status",
-                header: "Status",
-                accessorKey: "status",
-                width: 100,
-                cell: ({ row }) => {
-                  const details = getStatusDetails(row.original.status);
-                  return (
-                    <View className="flex-row items-center gap-1">
-                      <Icon
-                        as={details.icon}
-                        size={12}
-                        color={details.color}
-                      />
-                      <Text className={`text-xs ${details.color}`}>
-                        {details.label}
-                      </Text>
-                    </View>
-                  );
+            <DataTable
+              data={deployments}
+              columns={[
+                {
+                  id: "id",
+                  header: "ID",
+                  accessorKey: "$id",
+                  width: 150,
+                  cell: ({ row }) => (
+                    <Text className="text-xs font-mono" numberOfLines={1}>
+                      {row.original.$id}
+                    </Text>
+                  ),
                 },
-              },
-              {
-                id: "created",
-                header: "Created",
-                accessorKey: "$createdAt",
-                width: 100,
-                cell: ({ row }) => (
-                  <Text className="text-xs text-muted-foreground">
-                    {timeAgo(row.original.$createdAt)}
-                  </Text>
-                ),
-              },
-            ]}
-            pagination={false}
-            showSearch={false}
-          />
+                {
+                  id: "status",
+                  header: "Status",
+                  accessorKey: "status",
+                  width: 100,
+                  cell: ({ row }) => {
+                    const details = getStatusDetails(row.original.status);
+                    return (
+                      <View className="flex-row items-center gap-1">
+                        <Icon
+                          as={details.icon}
+                          size={12}
+                          color={details.color}
+                        />
+                        <Text className={`text-xs ${details.color}`}>
+                          {details.label}
+                        </Text>
+                      </View>
+                    );
+                  },
+                },
+                {
+                  id: "created",
+                  header: "Created",
+                  accessorKey: "$createdAt",
+                  width: 100,
+                  cell: ({ row }) => (
+                    <Text className="text-xs text-muted-foreground">
+                      {timeAgo(row.original.$createdAt)}
+                    </Text>
+                  ),
+                },
+              ]}
+              pagination={false}
+              showSearch={false}
+            />
           </View>
         </View>
       </View>
